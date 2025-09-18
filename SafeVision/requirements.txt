@@ -1,0 +1,113 @@
+# ================================
+# SafeVision Complete Requirements
+# ================================
+# Comprehensive dependencies for all SafeVision components
+# Generated from: main.py, video.py, live.py, live_streamer.py, 
+# safevision_api.py, safevision_gui_new.py
+
+# ===================
+# Core Dependencies
+# ===================
+
+# Computer Vision & Image Processing
+opencv-python>=4.5.5
+numpy>=1.22.0
+pillow>=9.0.0
+
+# Machine Learning & ONNX Runtime
+onnx>=1.11.0
+onnxruntime>=1.10.0
+
+# Progress Bars & CLI Tools
+tqdm>=4.62.0
+
+# ===================
+# GUI Framework
+# ===================
+
+# PyQt5 for Desktop GUI (safevision_gui_new.py)
+PyQt5>=5.15.6
+
+# ===================
+# Web Framework (API)
+# ===================
+
+# Flask REST API Server (safevision_api.py)
+flask>=2.0.0
+flask-cors>=3.0.10
+werkzeug>=2.0.0
+
+# ===================
+# Video Processing
+# ===================
+
+# FFmpeg Python wrapper (video.py, v_c.py)
+ffmpeg-python>=0.2.0
+
+# MoviePy for video editing fallback (v_c.py)
+moviepy>=1.0.3
+
+# ===================
+# Live Streaming
+# ===================
+
+# OBS WebSocket integration (live_streamer.py)
+obsws-python>=1.5.0
+
+# Screen capture (live_streamer.py, screen_overlay_detector.py)
+mss>=6.1.0
+
+# Virtual camera support (live_streamer.py)
+pyvirtualcam>=0.10.0
+
+# ===================
+# Windows-specific
+# ===================
+
+# Windows API bindings (screen_overlay_detector.py)
+pywin32>=227; sys_platform == "win32"
+
+# ===================
+# Optional GPU Support
+# ===================
+
+# ONNX Runtime GPU acceleration (uncomment if needed)
+# onnxruntime-gpu>=1.10.0
+# onnxruntime-directml>=1.10.0  # For AMD GPUs
+# onnxruntime-openvino>=1.10.0  # For Intel GPUs
+
+# ===================
+# Development & Testing
+# ===================
+
+# For development and testing (optional)
+# pytest>=6.0.0
+# pytest-cov>=2.10.0
+
+# ===================
+# Additional Utilities
+# ===================
+
+# JSON handling (built-in but ensuring compatibility)
+# argparse (built-in)
+# pathlib (built-in)
+# threading (built-in)
+# urllib (built-in)
+
+# ===================
+# Installation Notes
+# ===================
+# 
+# Basic installation:
+# pip install -r requirements.txt
+#
+# For GPU acceleration, also install:
+# pip install onnxruntime-gpu
+#
+# For Windows users, pywin32 is automatically installed
+# For Linux/Mac users, screen overlay features may not work
+#
+# Optional features:
+# - OBS integration requires OBS Studio with WebSocket plugin
+# - Virtual camera requires pyvirtualcam compatible drivers
+# - Screen capture works on all platforms but optimized for Windows

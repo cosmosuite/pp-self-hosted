@@ -1,0 +1,148 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Build outputs
+dist/
+build/
+*/dist/
+*/build/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Dependency directories
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# Next.js build output
+.next
+
+# Nuxt.js build / generate output
+.nuxt
+dist
+
+# Gatsby files
+.cache/
+public
+
+# Storybook build outputs
+.out
+.storybook-out
+
+# Temporary folders
+tmp/
+temp/
+
+# Editor directories and files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# SafeVision specific
+SafeVision/Models/
+SafeVision/output/
+SafeVision/Blur/
+SafeVision/Prosses/
+SafeVision/Logs/
+SafeVision/venv/
+SafeVision/__pycache__/
+SafeVision/*.pyc
+SafeVision/*.pyo
+SafeVision/*.pyd
+SafeVision/.Python
+SafeVision/pip-log.txt
+SafeVision/pip-delete-this-directory.txt
+SafeVision/.pytest_cache/
+SafeVision/.coverage
+SafeVision/htmlcov/
+SafeVision/.tox/
+SafeVision/.cache
+SafeVision/nosetests.xml
+SafeVision/coverage.xml
+SafeVision/*.cover
+SafeVision/.hypothesis/
+
+# Backend specific
+backend/uploads/
+backend/outputs/
+backend/temp/
+
+# Frontend specific
+frontend/dist/
+
+# Test files
+test-*.jpg
+test-*.png
+test-*.jpeg
+processed_*.jpg
+processed_*.png
+processed_*.jpeg
+
+# IDE files
+*.sublime-project
+*.sublime-workspace
+
+# Local configuration
+config.local.js
+config.local.json
