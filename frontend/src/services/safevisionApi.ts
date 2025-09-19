@@ -16,10 +16,17 @@ export class SafeVisionAPI {
     blur: boolean = true
   ): Promise<SafeVisionResponse> {
     const formData = new FormData();
-    formData.append('image', imageFile);
+    formData.append('file', imageFile);
     formData.append('threshold', threshold.toString());
     formData.append('blur', blur.toString());
-    formData.append('blur_rules', JSON.stringify(blurRules));
+    
+    // Add blur rules to form data
+    if (blur) {
+      Object.entries(blurRules).forEach(([key, value]) => {
+        formData.append(`blur_${key.toLowerCase()}`, value.toString());
+      });
+    }
+    // Note: SafeVision API doesn't support blur_rules parameter yet
 
     const response = await fetch(`${this.baseUrl}/detect`, {
       method: 'POST',
@@ -30,12 +37,24 @@ export class SafeVisionAPI {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    return response.json();
+    const result = await response.json();
+    
+    // Debug logging
+    console.log('🔍 API Response:', {
+      status: result.status,
+      censored_available: result.censored_available,
+      censored_image: result.censored_image,
+      detections_count: result.detections?.length || 0
+    });
+    
+    // Note: Blur rules are now handled by the API, no need to process in frontend
+    
+    return result;
   }
+
 
   async processImageBase64(
     imageData: string,
-    blurRules: BlurRules,
     threshold: number = 0.25,
     blur: boolean = true
   ): Promise<SafeVisionResponse> {
@@ -48,7 +67,6 @@ export class SafeVisionAPI {
         image: imageData,
         threshold,
         blur,
-        blur_rules: blurRules,
       }),
     });
 

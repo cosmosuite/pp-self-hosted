@@ -164,7 +164,74 @@ class SafeVisionAPI:
         """Generate unique session ID."""
         return str(uuid.uuid4())
     
-    def process_image(self, image_path, threshold=None, blur=False, session_id=None):
+    def create_censored_image(self, input_path, output_path, detections):
+        """Create a censored version of the image by blurring detected areas."""
+        try:
+            print(f"🔍 Creating censored image from {input_path} to {output_path}")
+            print(f"🔍 OpenCV available: {OPENCV_AVAILABLE}")
+            print(f"🔍 Detections to blur: {len(detections)}")
+            
+            if not OPENCV_AVAILABLE:
+                print("⚠️ OpenCV not available, copying original image")
+                # Fallback: just copy the original image
+                import shutil
+                shutil.copy2(input_path, output_path)
+                return
+            
+            # Load the image
+            image = cv2.imread(input_path)
+            if image is None:
+                raise ValueError(f"Could not load image: {input_path}")
+            
+            print(f"🔍 Image loaded: {image.shape}")
+            
+            # Apply blur to detected areas
+            for i, detection in enumerate(detections):
+                print(f"🔍 Processing detection {i}: {detection}")
+                if 'box' in detection:
+                    x, y, w, h = detection['box']
+                    x, y, w, h = int(x), int(y), int(w), int(h)
+                    
+                    print(f"🔍 Original box: x={x}, y={y}, w={w}, h={h}")
+                    
+                    # Ensure coordinates are within image bounds
+                    x = max(0, min(x, image.shape[1]))
+                    y = max(0, min(y, image.shape[0]))
+                    w = max(0, min(w, image.shape[1] - x))
+                    h = max(0, min(h, image.shape[0] - y))
+                    
+                    print(f"🔍 Clipped box: x={x}, y={y}, w={w}, h={h}")
+                    
+                    if w > 0 and h > 0:
+                        # Extract the region
+                        roi = image[y:y+h, x:x+w]
+                        
+                        # Apply heavy blur
+                        blurred_roi = cv2.GaussianBlur(roi, (99, 99), 0)
+                        
+                        # Put the blurred region back
+                        image[y:y+h, x:x+w] = blurred_roi
+                        print(f"✅ Applied blur to region {i}")
+                    else:
+                        print(f"⚠️ Skipping invalid region {i}")
+            
+            # Save the censored image
+            success = cv2.imwrite(output_path, image)
+            if success:
+                print(f"✅ Censored image saved to: {output_path}")
+            else:
+                print(f"❌ Failed to save censored image to: {output_path}")
+            
+        except Exception as e:
+            print(f"❌ Error creating censored image: {e}")
+            import traceback
+            traceback.print_exc()
+            # Fallback: copy original image
+            import shutil
+            shutil.copy2(input_path, output_path)
+            print(f"📋 Fallback: copied original to {output_path}")
+    
+    def process_image(self, image_path, threshold=None, blur=False, session_id=None, blur_rules=None):
         """Process image for nudity detection."""
         if not self.model_loaded:
             return {
@@ -201,13 +268,39 @@ class SafeVisionAPI:
             
             # Process censored version if requested
             censored_path = None
+            print(f"🔍 Blur requested: {blur}, Detections: {len(filtered_detections)}")
             if blur:
                 try:
                     base_name = os.path.splitext(os.path.basename(image_path))[0]
                     censored_path = os.path.join(API_CONFIG['OUTPUT_FOLDER'], f"{base_name}_censored.jpg")
-                    self.detector.censor(image_path, apply_blur=True, output_path=censored_path)
+                    print(f"🔍 Creating censored image at: {censored_path}")
+                    
+                    # Filter detections based on blur rules
+                    detections_to_blur = []
+                    if blur_rules:
+                        for detection in filtered_detections:
+                            label = detection['class']
+                            should_blur = blur_rules.get(label, False)
+                            if should_blur:
+                                detections_to_blur.append(detection)
+                                print(f"✅ Will blur: {label}")
+                            else:
+                                print(f"⏭️ Skipping: {label}")
+                    else:
+                        # If no blur rules provided, blur all detections
+                        detections_to_blur = filtered_detections
+                        print("⚠️ No blur rules provided, blurring all detections")
+                    
+                    print(f"🔍 Detections to blur: {len(detections_to_blur)} out of {len(filtered_detections)}")
+                    
+                    # Create censored image by copying original and applying blur to selected areas
+                    self.create_censored_image(image_path, censored_path, detections_to_blur)
+                    print(f"✅ Created censored image: {censored_path}")
                 except Exception as e:
-                    print(f"Warning: Failed to create censored version: {e}")
+                    print(f"❌ Warning: Failed to create censored version: {e}")
+                    import traceback
+                    traceback.print_exc()
+                    censored_path = None
             
             # Update request count
             self.request_count += 1
@@ -238,6 +331,7 @@ class SafeVisionAPI:
                     } for d in filtered_detections
                 ],
                 'censored_available': censored_path is not None,
+                'censored_image': censored_path,
                 'processing_info': {
                     'model_version': 'best.onnx',
                     'total_requests': self.request_count,
@@ -324,6 +418,30 @@ if FLASK_AVAILABLE:
             blur = request.form.get('blur', 'false').lower() == 'true'
             session_id = request.form.get('session_id')
             
+            # Get blur rules
+            blur_rules = {}
+            if blur:
+                blur_rules = {
+                    'FACE_FEMALE': request.form.get('blur_face_female', 'false').lower() == 'true',
+                    'FACE_MALE': request.form.get('blur_face_male', 'false').lower() == 'true',
+                    'FEMALE_GENITALIA_EXPOSED': request.form.get('blur_female_genitalia_exposed', 'false').lower() == 'true',
+                    'MALE_GENITALIA_EXPOSED': request.form.get('blur_male_genitalia_exposed', 'false').lower() == 'true',
+                    'FEMALE_BREAST_EXPOSED': request.form.get('blur_female_breast_exposed', 'false').lower() == 'true',
+                    'MALE_BREAST_EXPOSED': request.form.get('blur_male_breast_exposed', 'false').lower() == 'true',
+                    'BUTTOCKS_EXPOSED': request.form.get('blur_buttocks_exposed', 'false').lower() == 'true',
+                    'ANUS_EXPOSED': request.form.get('blur_anus_exposed', 'false').lower() == 'true',
+                    'BELLY_EXPOSED': request.form.get('blur_belly_exposed', 'false').lower() == 'true',
+                    'FEET_EXPOSED': request.form.get('blur_feet_exposed', 'false').lower() == 'true',
+                    'ARMPITS_EXPOSED': request.form.get('blur_armpits_exposed', 'false').lower() == 'true',
+                    'FEMALE_GENITALIA_COVERED': request.form.get('blur_female_genitalia_covered', 'false').lower() == 'true',
+                    'FEMALE_BREAST_COVERED': request.form.get('blur_female_breast_covered', 'false').lower() == 'true',
+                    'BUTTOCKS_COVERED': request.form.get('blur_buttocks_covered', 'false').lower() == 'true',
+                    'ANUS_COVERED': request.form.get('blur_anus_covered', 'false').lower() == 'true',
+                    'BELLY_COVERED': request.form.get('blur_belly_covered', 'false').lower() == 'true',
+                    'FEET_COVERED': request.form.get('blur_feet_covered', 'false').lower() == 'true',
+                    'ARMPITS_COVERED': request.form.get('blur_armpits_covered', 'false').lower() == 'true',
+                }
+            
             # Save uploaded file
             filename = secure_filename(file.filename)
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -332,7 +450,7 @@ if FLASK_AVAILABLE:
             file.save(file_path)
             
             # Process image
-            result = api_instance.process_image(file_path, threshold, blur, session_id)
+            result = api_instance.process_image(file_path, threshold, blur, session_id, blur_rules)
             
             if result.get('status') == 'error':
                 return jsonify(result), result.get('code', 500)
@@ -413,6 +531,18 @@ if FLASK_AVAILABLE:
     def get_statistics():
         """Get detailed API statistics."""
         return jsonify(api_instance.get_stats())
+    
+    @app.route('/api_outputs/<filename>')
+    def serve_censored_image(filename):
+        """Serve censored images."""
+        try:
+            file_path = os.path.join(API_CONFIG['OUTPUT_FOLDER'], filename)
+            if os.path.exists(file_path):
+                return send_file(file_path, mimetype='image/jpeg')
+            else:
+                return jsonify({'error': 'File not found'}), 404
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
     
     @app.errorhandler(413)
     def too_large(e):

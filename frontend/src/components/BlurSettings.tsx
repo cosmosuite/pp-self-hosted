@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Switch } from './ui/switch';
 import { Label } from './ui/label';
 import { Button } from './ui/button';
+import { Eye, EyeOff } from 'lucide-react';
 import { BlurRules, BLUR_RULE_LABELS } from '../types/safevision';
 
 interface BlurSettingsProps {
@@ -11,6 +12,8 @@ interface BlurSettingsProps {
 }
 
 const BlurSettings: React.FC<BlurSettingsProps> = ({ blurRules, onRulesChange }) => {
+  const [showDetailedSettings, setShowDetailedSettings] = useState(false);
+
   const handleRuleChange = (label: keyof BlurRules, value: boolean) => {
     onRulesChange({
       ...blurRules,
@@ -96,104 +99,121 @@ const BlurSettings: React.FC<BlurSettingsProps> = ({ blurRules, onRulesChange })
   ];
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Blur Settings</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Quick Presets */}
-        <div className="space-y-3">
-          <h4 className="font-medium text-sm">Quick Presets</h4>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => applyPreset('faces-only')}
-            >
-              Faces Only
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => applyPreset('nudity-only')}
-            >
-              Nudity Only
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => applyPreset('everything')}
-            >
-              Everything
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => applyPreset('nothing')}
-            >
-              Nothing
-            </Button>
-          </div>
+    <div className="space-y-4">
+      {/* Quick Presets - Always Visible */}
+      <div className="space-y-3">
+        <h4 className="font-medium text-sm">Quick Presets</h4>
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => applyPreset('faces-only')}
+            className="text-xs"
+          >
+            Faces Only
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => applyPreset('nudity-only')}
+            className="text-xs"
+          >
+            Nudity Only
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => applyPreset('everything')}
+            className="text-xs"
+          >
+            Everything
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => applyPreset('nothing')}
+            className="text-xs"
+          >
+            Nothing
+          </Button>
         </div>
+      </div>
 
-        {/* Face Detection */}
-        <div className="space-y-3">
-          <h4 className="font-medium text-sm">Face Detection</h4>
-          <div className="space-y-2">
-            {faceLabels.map((label) => (
-              <div key={label} className="flex items-center justify-between">
-                <Label htmlFor={label} className="text-sm">
-                  {BLUR_RULE_LABELS[label]}
-                </Label>
-                <Switch
-                  id={label}
-                  checked={blurRules[label]}
-                  onCheckedChange={(value) => handleRuleChange(label, value)}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* Detailed Settings Toggle */}
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-medium">Advanced Settings</span>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowDetailedSettings(!showDetailedSettings)}
+          className="h-8 w-8 p-0"
+        >
+          {showDetailedSettings ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+        </Button>
+      </div>
 
-        {/* Exposed Content */}
-        <div className="space-y-3">
-          <h4 className="font-medium text-sm">Exposed Content</h4>
-          <div className="space-y-2">
-            {exposedLabels.map((label) => (
-              <div key={label} className="flex items-center justify-between">
-                <Label htmlFor={label} className="text-sm">
-                  {BLUR_RULE_LABELS[label]}
-                </Label>
-                <Switch
-                  id={label}
-                  checked={blurRules[label]}
-                  onCheckedChange={(value) => handleRuleChange(label, value)}
-                />
-              </div>
-            ))}
+      {/* Detailed Settings - Hidden by Default */}
+      {showDetailedSettings && (
+        <div className="space-y-4 border-t pt-4">
+          {/* Face Detection */}
+          <div className="space-y-3">
+            <h4 className="font-medium text-sm">Face Detection</h4>
+            <div className="space-y-2">
+              {faceLabels.map((label) => (
+                <div key={label} className="flex items-center justify-between">
+                  <Label htmlFor={label} className="text-xs">
+                    {BLUR_RULE_LABELS[label]}
+                  </Label>
+                  <Switch
+                    id={label}
+                    checked={blurRules[label]}
+                    onCheckedChange={(value) => handleRuleChange(label, value)}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* Covered Content */}
-        <div className="space-y-3">
-          <h4 className="font-medium text-sm">Covered Content</h4>
-          <div className="space-y-2">
-            {coveredLabels.map((label) => (
-              <div key={label} className="flex items-center justify-between">
-                <Label htmlFor={label} className="text-sm">
-                  {BLUR_RULE_LABELS[label]}
-                </Label>
-                <Switch
-                  id={label}
-                  checked={blurRules[label]}
-                  onCheckedChange={(value) => handleRuleChange(label, value)}
-                />
-              </div>
-            ))}
+          {/* Exposed Content */}
+          <div className="space-y-3">
+            <h4 className="font-medium text-sm">Exposed Content</h4>
+            <div className="space-y-2">
+              {exposedLabels.map((label) => (
+                <div key={label} className="flex items-center justify-between">
+                  <Label htmlFor={label} className="text-xs">
+                    {BLUR_RULE_LABELS[label]}
+                  </Label>
+                  <Switch
+                    id={label}
+                    checked={blurRules[label]}
+                    onCheckedChange={(value) => handleRuleChange(label, value)}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Covered Content */}
+          <div className="space-y-3">
+            <h4 className="font-medium text-sm">Covered Content</h4>
+            <div className="space-y-2">
+              {coveredLabels.map((label) => (
+                <div key={label} className="flex items-center justify-between">
+                  <Label htmlFor={label} className="text-xs">
+                    {BLUR_RULE_LABELS[label]}
+                  </Label>
+                  <Switch
+                    id={label}
+                    checked={blurRules[label]}
+                    onCheckedChange={(value) => handleRuleChange(label, value)}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      )}
+    </div>
   );
 };
 
