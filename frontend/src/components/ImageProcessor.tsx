@@ -4,7 +4,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Alert, AlertDescription } from './ui/alert';
-import { Loader2, Upload } from 'lucide-react';
+import { Loader2, Upload, Download } from 'lucide-react';
 import BlurSettings from './BlurSettings';
 import { safeVisionAPI } from '../services/safevisionApi';
 import { BlurRules, DEFAULT_BLUR_RULES, SafeVisionResponse } from '../types/safevision';
@@ -123,6 +123,50 @@ const ImageProcessor: React.FC = () => {
     event.preventDefault();
   };
 
+  const handleDownload = async () => {
+    if (!result || !result.censored_image) {
+      console.log('No processed image available for download');
+      return;
+    }
+
+    try {
+      // Create the full URL for the processed image
+      const imageUrl = `http://localhost:5001/${result.censored_image}`;
+      
+      // Fetch the image
+      const response = await fetch(imageUrl);
+      if (!response.ok) {
+        throw new Error('Failed to fetch image');
+      }
+      
+      // Convert to blob
+      const blob = await response.blob();
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Generate filename with timestamp and intensity
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = `processed_image_${timestamp}_intensity_${blurIntensity}.jpg`;
+      link.download = filename;
+      
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      console.log('✅ Image downloaded successfully:', filename);
+    } catch (error) {
+      console.error('❌ Download failed:', error);
+      setError('Failed to download image. Please try again.');
+    }
+  };
+
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -215,9 +259,22 @@ const ImageProcessor: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Processed Image */}
-                  <div className="space-y-2">
-                    <h4 className="font-medium text-sm text-gray-700">Processed</h4>
+                      {/* Processed Image */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-medium text-sm text-gray-700">Processed</h4>
+                          {result && result.censored_image && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={handleDownload}
+                              className="h-7 px-2 text-xs"
+                            >
+                              <Download className="h-3 w-3 mr-1" />
+                              Download
+                            </Button>
+                          )}
+                        </div>
                     {result && result.censored_image ? (
                       <img
                         src={`http://localhost:5001/${result.censored_image}`}
