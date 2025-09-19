@@ -7,7 +7,7 @@ import fs from 'fs-extra';
 import { v4 as uuidv4 } from 'uuid';
 import { processImage } from './services/imageProcessor';
 import { BlurOptions } from './types';
-import { setupSafeVision } from '../scripts/setup-safevision';
+const { setupSafeVision } = require('../scripts/setup-safevision');
 
 const app = express();
 const PORT = process.env.PORT || 3001;

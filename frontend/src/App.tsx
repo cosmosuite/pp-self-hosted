@@ -1,29 +1,20 @@
-import { useState } from 'react'
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
-import { Slider } from "@/components/ui/slider"
-import { ImageProcessor } from './components/ImageProcessor'
+import ImageProcessor from './components/ImageProcessor';
+import './index.css';
 
 function App() {
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto py-8">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-2">
-            SafeVision Content Filter
-          </h1>
-          <p className="text-muted-foreground">
-            AI-Powered Content Detection & Filtering
-          </p>
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white shadow-sm border-b">
+        <div className="container mx-auto px-6 py-4">
+          <h1 className="text-2xl font-bold text-gray-900">SafeVision Content Moderation</h1>
+          <p className="text-gray-600">AI-powered content detection and blurring with customizable rules</p>
         </div>
-        
+      </header>
+      <main>
         <ImageProcessor />
-      </div>
+      </main>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
