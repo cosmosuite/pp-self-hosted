@@ -11,6 +11,7 @@ import { BlurRules, DEFAULT_BLUR_RULES, SafeVisionResponse } from '../types/safe
 
 const ImageProcessor: React.FC = () => {
   const [blurRules, setBlurRules] = useState<BlurRules>(DEFAULT_BLUR_RULES);
+  const [blurIntensity, setBlurIntensity] = useState<number>(50); // 0-100 scale
   const [processing, setProcessing] = useState(false);
   const [result, setResult] = useState<SafeVisionResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +27,7 @@ const ImageProcessor: React.FC = () => {
     setResult(null);
 
     try {
-      const response = await safeVisionAPI.processImage(file, blurRules, threshold, true);
+      const response = await safeVisionAPI.processImage(file, blurRules, threshold, true, blurIntensity);
       setResult(response);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -36,7 +37,7 @@ const ImageProcessor: React.FC = () => {
   };
 
   // Live blur function with debouncing
-  const performLiveBlur = async (rules: BlurRules) => {
+  const performLiveBlur = async (rules: BlurRules, intensity?: number) => {
     if (!selectedFile || !liveBlurEnabled) return;
 
     // Clear existing timeout
@@ -50,7 +51,8 @@ const ImageProcessor: React.FC = () => {
       setError(null);
 
       try {
-        const response = await safeVisionAPI.processImage(selectedFile, rules, threshold, true);
+        const currentIntensity = intensity !== undefined ? intensity : blurIntensity;
+        const response = await safeVisionAPI.processImage(selectedFile, rules, threshold, true, currentIntensity);
         setResult(response);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
@@ -67,6 +69,18 @@ const ImageProcessor: React.FC = () => {
     // Trigger live blur if file is selected and live blur is enabled
     if (selectedFile && liveBlurEnabled) {
       performLiveBlur(newRules);
+    }
+  };
+
+  // Handle blur intensity change with live blur
+  const handleBlurIntensityChange = (newIntensity: number) => {
+    console.log('🎚️ Blur intensity changed to:', newIntensity);
+    setBlurIntensity(newIntensity);
+    
+    // Trigger live blur if file is selected and live blur is enabled
+    if (selectedFile && liveBlurEnabled) {
+      console.log('🔄 Triggering live blur with intensity:', newIntensity);
+      performLiveBlur(blurRules, newIntensity);
     }
   };
 
@@ -153,7 +167,12 @@ const ImageProcessor: React.FC = () => {
                   </Button>
                 </div>
                 
-                <BlurSettings blurRules={blurRules} onRulesChange={handleBlurRulesChange} />
+                    <BlurSettings 
+                      blurRules={blurRules} 
+                      onRulesChange={handleBlurRulesChange}
+                      blurIntensity={blurIntensity}
+                      onIntensityChange={handleBlurIntensityChange}
+                    />
               </div>
             </CardContent>
           </Card>

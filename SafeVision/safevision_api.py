@@ -164,7 +164,7 @@ class SafeVisionAPI:
         """Generate unique session ID."""
         return str(uuid.uuid4())
     
-    def create_censored_image(self, input_path, output_path, detections):
+    def create_censored_image(self, input_path, output_path, detections, blur_intensity=50):
         """Create a censored version of the image by blurring detected areas."""
         try:
             print(f"🔍 Creating censored image from {input_path} to {output_path}")
@@ -206,12 +206,40 @@ class SafeVisionAPI:
                         # Extract the region
                         roi = image[y:y+h, x:x+w]
                         
-                        # Apply heavy blur
-                        blurred_roi = cv2.GaussianBlur(roi, (99, 99), 0)
+                        # Calculate blur parameters based on intensity (0-100 scale)
+                        # Use SafeVision's proper blur strength system: (kernel_x, kernel_y, sigma)
+                        # Based on video.py CONFIG values
+                        if blur_intensity <= 0:
+                            kernel_x, kernel_y, sigma = 1, 1, 0   # No blur
+                        elif blur_intensity <= 10:
+                            kernel_x, kernel_y, sigma = 5, 5, 5   # Very light blur
+                        elif blur_intensity <= 20:
+                            kernel_x, kernel_y, sigma = 9, 9, 8   # Light blur
+                        elif blur_intensity <= 30:
+                            kernel_x, kernel_y, sigma = 13, 13, 12  # Light-medium blur
+                        elif blur_intensity <= 40:
+                            kernel_x, kernel_y, sigma = 17, 17, 16  # Medium blur
+                        elif blur_intensity <= 50:
+                            kernel_x, kernel_y, sigma = 23, 23, 30  # NORMAL blur (SafeVision standard)
+                        elif blur_intensity <= 60:
+                            kernel_x, kernel_y, sigma = 27, 27, 35  # Medium-high blur
+                        elif blur_intensity <= 70:
+                            kernel_x, kernel_y, sigma = 31, 31, 50  # HIGH blur (SafeVision high)
+                        elif blur_intensity <= 80:
+                            kernel_x, kernel_y, sigma = 45, 45, 60  # Very high blur
+                        elif blur_intensity <= 90:
+                            kernel_x, kernel_y, sigma = 65, 65, 70  # Maximum blur
+                        else:
+                            kernel_x, kernel_y, sigma = 99, 99, 75  # FULL blur (SafeVision full)
+                        
+                        print(f"🔍 Blur intensity: {blur_intensity}%, kernel: ({kernel_x},{kernel_y}), sigma: {sigma}")
+                        
+                        # Apply blur with calculated parameters
+                        blurred_roi = cv2.GaussianBlur(roi, (kernel_x, kernel_y), sigma)
                         
                         # Put the blurred region back
                         image[y:y+h, x:x+w] = blurred_roi
-                        print(f"✅ Applied blur to region {i}")
+                        print(f"✅ Applied blur to region {i} with intensity {blur_intensity}%")
                     else:
                         print(f"⚠️ Skipping invalid region {i}")
             
@@ -231,7 +259,7 @@ class SafeVisionAPI:
             shutil.copy2(input_path, output_path)
             print(f"📋 Fallback: copied original to {output_path}")
     
-    def process_image(self, image_path, threshold=None, blur=False, session_id=None, blur_rules=None):
+    def process_image(self, image_path, threshold=None, blur=False, session_id=None, blur_rules=None, blur_intensity=50):
         """Process image for nudity detection."""
         if not self.model_loaded:
             return {
@@ -272,7 +300,7 @@ class SafeVisionAPI:
             if blur:
                 try:
                     base_name = os.path.splitext(os.path.basename(image_path))[0]
-                    censored_path = os.path.join(API_CONFIG['OUTPUT_FOLDER'], f"{base_name}_censored.jpg")
+                    censored_path = os.path.join(API_CONFIG['OUTPUT_FOLDER'], f"{base_name}_intensity_{blur_intensity}_censored.jpg")
                     print(f"🔍 Creating censored image at: {censored_path}")
                     
                     # Filter detections based on blur rules
@@ -294,7 +322,7 @@ class SafeVisionAPI:
                     print(f"🔍 Detections to blur: {len(detections_to_blur)} out of {len(filtered_detections)}")
                     
                     # Create censored image by copying original and applying blur to selected areas
-                    self.create_censored_image(image_path, censored_path, detections_to_blur)
+                    self.create_censored_image(image_path, censored_path, detections_to_blur, blur_intensity)
                     print(f"✅ Created censored image: {censored_path}")
                 except Exception as e:
                     print(f"❌ Warning: Failed to create censored version: {e}")
@@ -416,7 +444,10 @@ if FLASK_AVAILABLE:
             # Get parameters
             threshold = request.form.get('threshold', API_CONFIG['DEFAULT_THRESHOLD'], type=float)
             blur = request.form.get('blur', 'false').lower() == 'true'
+            blur_intensity = request.form.get('blur_intensity', 50, type=int)
             session_id = request.form.get('session_id')
+            
+            print(f"🎚️ Received blur_intensity: {blur_intensity}")
             
             # Get blur rules
             blur_rules = {}
@@ -444,13 +475,13 @@ if FLASK_AVAILABLE:
             
             # Save uploaded file
             filename = secure_filename(file.filename)
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')  # Include microseconds
             unique_filename = f"{timestamp}_{filename}"
             file_path = os.path.join(API_CONFIG['UPLOAD_FOLDER'], unique_filename)
             file.save(file_path)
             
             # Process image
-            result = api_instance.process_image(file_path, threshold, blur, session_id, blur_rules)
+            result = api_instance.process_image(file_path, threshold, blur, session_id, blur_rules, blur_intensity)
             
             if result.get('status') == 'error':
                 return jsonify(result), result.get('code', 500)

@@ -13,7 +13,8 @@ export class SafeVisionAPI {
     imageFile: File,
     blurRules: BlurRules,
     threshold: number = 0.25,
-    blur: boolean = true
+    blur: boolean = true,
+    blurIntensity: number = 50
   ): Promise<SafeVisionResponse> {
     const formData = new FormData();
     formData.append('file', imageFile);
@@ -25,8 +26,12 @@ export class SafeVisionAPI {
       Object.entries(blurRules).forEach(([key, value]) => {
         formData.append(`blur_${key.toLowerCase()}`, value.toString());
       });
+      // Add blur intensity
+      formData.append('blur_intensity', blurIntensity.toString());
+      // Add timestamp to force processing
+      formData.append('timestamp', Date.now().toString());
+      console.log('🎚️ Sending blur intensity to API:', blurIntensity);
     }
-    // Note: SafeVision API doesn't support blur_rules parameter yet
 
     const response = await fetch(`${this.baseUrl}/detect`, {
       method: 'POST',

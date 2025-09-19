@@ -3,15 +3,18 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Switch } from './ui/switch';
 import { Label } from './ui/label';
 import { Button } from './ui/button';
+import { Slider } from './ui/slider';
 import { Eye, EyeOff } from 'lucide-react';
 import { BlurRules, BLUR_RULE_LABELS } from '../types/safevision';
 
 interface BlurSettingsProps {
   blurRules: BlurRules;
   onRulesChange: (rules: BlurRules) => void;
+  blurIntensity: number;
+  onIntensityChange: (intensity: number) => void;
 }
 
-const BlurSettings: React.FC<BlurSettingsProps> = ({ blurRules, onRulesChange }) => {
+const BlurSettings: React.FC<BlurSettingsProps> = ({ blurRules, onRulesChange, blurIntensity, onIntensityChange }) => {
   const [showDetailedSettings, setShowDetailedSettings] = useState(false);
 
   const handleRuleChange = (label: keyof BlurRules, value: boolean) => {
@@ -130,6 +133,78 @@ const BlurSettings: React.FC<BlurSettingsProps> = ({ blurRules, onRulesChange })
 
   return (
     <div className="space-y-4">
+      {/* Blur Intensity - Always Visible */}
+      <div className="space-y-3">
+        <div className="space-y-2">
+          <Label htmlFor="blur-intensity" className="text-sm font-medium">
+            Blur Intensity: {blurIntensity}%
+          </Label>
+          <Slider
+            id="blur-intensity"
+            min={0}
+            max={100}
+            step={1}
+            value={[blurIntensity]}
+            onValueChange={(value) => {
+              console.log('🎚️ Slider changed to:', value[0]);
+              onIntensityChange(value[0]);
+            }}
+            className="w-full"
+          />
+          <div className="flex justify-between text-xs text-gray-500">
+            <span>None</span>
+            <span>Light</span>
+            <span>Medium</span>
+            <span>Heavy</span>
+            <span>Max</span>
+          </div>
+          
+          {/* Quick Intensity Presets */}
+          <div className="grid grid-cols-5 gap-1 mt-2">
+            <Button
+              variant={blurIntensity === 0 ? "default" : "outline"}
+              size="sm"
+              onClick={() => onIntensityChange(0)}
+              className="text-xs h-6"
+            >
+              0%
+            </Button>
+            <Button
+              variant={blurIntensity === 25 ? "default" : "outline"}
+              size="sm"
+              onClick={() => onIntensityChange(25)}
+              className="text-xs h-6"
+            >
+              25%
+            </Button>
+            <Button
+              variant={blurIntensity === 50 ? "default" : "outline"}
+              size="sm"
+              onClick={() => onIntensityChange(50)}
+              className="text-xs h-6"
+            >
+              50%
+            </Button>
+            <Button
+              variant={blurIntensity === 75 ? "default" : "outline"}
+              size="sm"
+              onClick={() => onIntensityChange(75)}
+              className="text-xs h-6"
+            >
+              75%
+            </Button>
+            <Button
+              variant={blurIntensity === 100 ? "default" : "outline"}
+              size="sm"
+              onClick={() => onIntensityChange(100)}
+              className="text-xs h-6"
+            >
+              100%
+            </Button>
+          </div>
+        </div>
+      </div>
+
       {/* Quick Presets - Always Visible */}
       <div className="space-y-3">
         <h4 className="font-medium text-sm">Quick Presets</h4>
