@@ -17,28 +17,25 @@ const ImageProcessor: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [threshold, setThreshold] = useState(0.25);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [liveBlurEnabled, setLiveBlurEnabled] = useState(true);
+  // Live blur is always enabled - no need for state
   const fileInputRef = useRef<HTMLInputElement>(null);
   const liveBlurTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleImageUpload = async (file: File) => {
-    setProcessing(true);
-    setError(null);
-    setResult(null);
-
-    try {
-      const response = await safeVisionAPI.processImage(file, blurRules, threshold, true, blurIntensity);
-      setResult(response);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setProcessing(false);
-    }
-  };
 
   // Live blur function with debouncing
-  const performLiveBlur = async (rules: BlurRules, intensity?: number) => {
-    if (!selectedFile || !liveBlurEnabled) return;
+  const performLiveBlur = async (rules: BlurRules, intensity?: number, file?: File) => {
+    const fileToUse = file || selectedFile;
+    console.log('🎯 performLiveBlur called with:', { 
+      hasFile: !!fileToUse, 
+      fileName: fileToUse?.name,
+      rules: rules,
+      intensity: intensity || blurIntensity
+    });
+    
+    if (!fileToUse) {
+      console.log('❌ No file selected, skipping blur');
+      return;
+    }
 
     // Clear existing timeout
     if (liveBlurTimeoutRef.current) {
@@ -47,14 +44,23 @@ const ImageProcessor: React.FC = () => {
 
     // Set new timeout for debounced processing
     liveBlurTimeoutRef.current = setTimeout(async () => {
+      console.log('🚀 Starting blur processing...');
       setProcessing(true);
       setError(null);
 
       try {
         const currentIntensity = intensity !== undefined ? intensity : blurIntensity;
-        const response = await safeVisionAPI.processImage(selectedFile, rules, threshold, true, currentIntensity);
+        console.log('📤 Sending to API:', { 
+          fileName: fileToUse.name, 
+          intensity: currentIntensity,
+          rules: rules
+        });
+        
+        const response = await safeVisionAPI.processImage(fileToUse, rules, threshold, true, currentIntensity);
+        console.log('✅ API response received:', response);
         setResult(response);
       } catch (err) {
+        console.error('❌ API error:', err);
         setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
         setProcessing(false);
@@ -66,8 +72,8 @@ const ImageProcessor: React.FC = () => {
   const handleBlurRulesChange = (newRules: BlurRules) => {
     setBlurRules(newRules);
     
-    // Trigger live blur if file is selected and live blur is enabled
-    if (selectedFile && liveBlurEnabled) {
+    // Trigger live blur if file is selected
+    if (selectedFile) {
       performLiveBlur(newRules);
     }
   };
@@ -77,8 +83,8 @@ const ImageProcessor: React.FC = () => {
     console.log('🎚️ Blur intensity changed to:', newIntensity);
     setBlurIntensity(newIntensity);
     
-    // Trigger live blur if file is selected and live blur is enabled
-    if (selectedFile && liveBlurEnabled) {
+    // Trigger live blur if file is selected
+    if (selectedFile) {
       console.log('🔄 Triggering live blur with intensity:', newIntensity);
       performLiveBlur(blurRules, newIntensity);
     }
@@ -87,14 +93,14 @@ const ImageProcessor: React.FC = () => {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      console.log('📁 File selected:', file.name);
       setSelectedFile(file);
       setResult(null);
       setError(null);
       
-      // Trigger live blur for new file
-      if (liveBlurEnabled) {
-        performLiveBlur(blurRules);
-      }
+      // Auto-blur immediately when file is selected
+      console.log('🔄 Triggering auto-blur for new file');
+      performLiveBlur(blurRules, undefined, file);
     }
   };
 
@@ -102,14 +108,14 @@ const ImageProcessor: React.FC = () => {
     event.preventDefault();
     const file = event.dataTransfer.files[0];
     if (file && file.type.startsWith('image/')) {
+      console.log('📁 File dropped:', file.name);
       setSelectedFile(file);
       setResult(null);
       setError(null);
       
-      // Trigger live blur for new file
-      if (liveBlurEnabled) {
-        performLiveBlur(blurRules);
-      }
+      // Auto-blur immediately when file is dropped
+      console.log('🔄 Triggering auto-blur for dropped file');
+      performLiveBlur(blurRules, undefined, file);
     }
   };
 
@@ -117,11 +123,6 @@ const ImageProcessor: React.FC = () => {
     event.preventDefault();
   };
 
-  const handleProcessImage = async () => {
-    if (selectedFile) {
-      await handleImageUpload(selectedFile);
-    }
-  };
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -152,29 +153,16 @@ const ImageProcessor: React.FC = () => {
             <CardHeader>
               <CardTitle>Blur Settings</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {/* Live Blur Toggle */}
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Live Blur</span>
-                  <Button
-                    variant={liveBlurEnabled ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setLiveBlurEnabled(!liveBlurEnabled)}
-                    className="text-xs"
-                  >
-                    {liveBlurEnabled ? "ON" : "OFF"}
-                  </Button>
-                </div>
-                
+                <CardContent>
+                  <div className="space-y-4">
                     <BlurSettings 
                       blurRules={blurRules} 
                       onRulesChange={handleBlurRulesChange}
                       blurIntensity={blurIntensity}
                       onIntensityChange={handleBlurIntensityChange}
                     />
-              </div>
-            </CardContent>
+                  </div>
+                </CardContent>
           </Card>
         </div>
 
@@ -247,36 +235,20 @@ const ImageProcessor: React.FC = () => {
                         <Loader2 className="h-6 w-6 animate-spin mr-2" />
                         <span className="text-sm text-gray-500">Processing...</span>
                       </div>
-                    ) : (
-                      <div className="flex items-center justify-center min-h-32 border-2 border-dashed border-gray-300 rounded p-8 text-gray-400">
-                        <span className="text-sm">Click Process to see result</span>
-                      </div>
-                    )}
+                        ) : (
+                          <div className="flex items-center justify-center min-h-32 border-2 border-dashed border-gray-300 rounded p-8 text-gray-400">
+                            <span className="text-sm">Processing...</span>
+                          </div>
+                        )}
                   </div>
                 </div>
                 
-                {/* File Info and Process Button */}
-                <div className="text-center">
-                  <p className="text-sm text-gray-600 mb-2">
-                    Selected: {selectedFile.name}
-                  </p>
-                  <Button 
-                    onClick={handleProcessImage}
-                    disabled={processing}
-                    className="w-full"
-                  >
-                    {processing ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Processing...
-                      </>
-                    ) : liveBlurEnabled ? (
-                      'Manual Process'
-                    ) : (
-                      'Process Image'
-                    )}
-                  </Button>
-                </div>
+                    {/* File Info */}
+                    <div className="text-center">
+                      <p className="text-sm text-gray-600">
+                        Selected: {selectedFile.name}
+                      </p>
+                    </div>
               </div>
             )}
           </CardContent>
