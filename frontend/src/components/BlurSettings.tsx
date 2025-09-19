@@ -76,6 +76,36 @@ const BlurSettings: React.FC<BlurSettingsProps> = ({ blurRules, onRulesChange })
     onRulesChange(presets[preset]);
   };
 
+  // Function to check which preset is currently active
+  const getActivePreset = (): 'faces-only' | 'nudity-only' | 'everything' | 'nothing' | null => {
+    const facesOnly = blurRules.FACE_FEMALE && blurRules.FACE_MALE && 
+      !blurRules.FEMALE_GENITALIA_EXPOSED && !blurRules.MALE_GENITALIA_EXPOSED &&
+      !blurRules.FEMALE_BREAST_EXPOSED && !blurRules.MALE_BREAST_EXPOSED &&
+      !blurRules.BUTTOCKS_EXPOSED && !blurRules.ANUS_EXPOSED &&
+      !blurRules.BELLY_EXPOSED && !blurRules.FEET_EXPOSED && !blurRules.ARMPITS_EXPOSED &&
+      !blurRules.FEMALE_GENITALIA_COVERED && !blurRules.FEMALE_BREAST_COVERED &&
+      !blurRules.BUTTOCKS_COVERED && !blurRules.ANUS_COVERED &&
+      !blurRules.BELLY_COVERED && !blurRules.FEET_COVERED && !blurRules.ARMPITS_COVERED;
+
+    const nudityOnly = !blurRules.FACE_FEMALE && !blurRules.FACE_MALE && 
+      blurRules.FEMALE_GENITALIA_EXPOSED && blurRules.MALE_GENITALIA_EXPOSED &&
+      blurRules.FEMALE_BREAST_EXPOSED && blurRules.MALE_BREAST_EXPOSED &&
+      blurRules.BUTTOCKS_EXPOSED && blurRules.ANUS_EXPOSED &&
+      blurRules.BELLY_EXPOSED && blurRules.FEET_EXPOSED && blurRules.ARMPITS_EXPOSED &&
+      !blurRules.FEMALE_GENITALIA_COVERED && !blurRules.FEMALE_BREAST_COVERED &&
+      !blurRules.BUTTOCKS_COVERED && !blurRules.ANUS_COVERED &&
+      !blurRules.BELLY_COVERED && !blurRules.FEET_COVERED && !blurRules.ARMPITS_COVERED;
+
+    const everything = Object.values(blurRules).every(value => value === true);
+    const nothing = Object.values(blurRules).every(value => value === false);
+
+    if (facesOnly) return 'faces-only';
+    if (nudityOnly) return 'nudity-only';
+    if (everything) return 'everything';
+    if (nothing) return 'nothing';
+    return null;
+  };
+
   const faceLabels: (keyof BlurRules)[] = ['FACE_FEMALE', 'FACE_MALE'];
   const exposedLabels: (keyof BlurRules)[] = [
     'FEMALE_GENITALIA_EXPOSED',
@@ -105,7 +135,7 @@ const BlurSettings: React.FC<BlurSettingsProps> = ({ blurRules, onRulesChange })
         <h4 className="font-medium text-sm">Quick Presets</h4>
         <div className="grid grid-cols-2 gap-2">
           <Button
-            variant="outline"
+            variant={getActivePreset() === 'faces-only' ? 'default' : 'outline'}
             size="sm"
             onClick={() => applyPreset('faces-only')}
             className="text-xs"
@@ -113,7 +143,7 @@ const BlurSettings: React.FC<BlurSettingsProps> = ({ blurRules, onRulesChange })
             Faces Only
           </Button>
           <Button
-            variant="outline"
+            variant={getActivePreset() === 'nudity-only' ? 'default' : 'outline'}
             size="sm"
             onClick={() => applyPreset('nudity-only')}
             className="text-xs"
@@ -121,7 +151,7 @@ const BlurSettings: React.FC<BlurSettingsProps> = ({ blurRules, onRulesChange })
             Nudity Only
           </Button>
           <Button
-            variant="outline"
+            variant={getActivePreset() === 'everything' ? 'default' : 'outline'}
             size="sm"
             onClick={() => applyPreset('everything')}
             className="text-xs"
@@ -129,7 +159,7 @@ const BlurSettings: React.FC<BlurSettingsProps> = ({ blurRules, onRulesChange })
             Everything
           </Button>
           <Button
-            variant="outline"
+            variant={getActivePreset() === 'nothing' ? 'default' : 'outline'}
             size="sm"
             onClick={() => applyPreset('nothing')}
             className="text-xs"
