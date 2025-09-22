@@ -44,14 +44,15 @@ async function waitForService(name, port, healthUrl, maxWait = 30000) {
   return false;
 }
 
-async function startService(name, command, args, cwd) {
+async function startService(name, command, args, cwd, env = {}) {
   log(name, `Starting ${name}...`, 'cyan');
   
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
       cwd: cwd,
       stdio: 'pipe',
-      shell: true
+      shell: true,
+      env: { ...process.env, ...env }
     });
     
     child.stdout.on('data', (data) => {
@@ -101,7 +102,8 @@ async function startSequential() {
       'SAFEVISION',
       './safevision_env/bin/python',
       ['safevision_api.py'],
-      './SafeVision'
+      './SafeVision',
+      {}
     );
     services.push(safevision);
     
@@ -117,7 +119,8 @@ async function startSequential() {
       'BACKEND',
       'npm',
       ['run', 'dev'],
-      './backend'
+      './backend',
+      { PORT: '3001' }
     );
     services.push(backend);
     
@@ -133,7 +136,8 @@ async function startSequential() {
       'FRONTEND',
       'npx',
       ['vite'],
-      './frontend'
+      './frontend',
+      {}
     );
     services.push(frontend);
     

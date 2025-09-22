@@ -5,7 +5,7 @@ const fs = require('fs-extra');
 async function setupSafeVision() {
   console.log('Setting up SafeVision integration...');
   
-  const safevisionPath = path.join(__dirname, '../../../SafeVision');
+  const safevisionPath = path.join(__dirname, '../../SafeVision');
   
   // Check if SafeVision directory exists
   if (!fs.existsSync(safevisionPath)) {

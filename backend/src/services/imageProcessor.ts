@@ -15,7 +15,7 @@ async function processWithSafeVision(imagePath: string, options: BlurOptions): P
     console.log('Blur options:', options);
     
     // Path to the SafeVision directory
-    const safevisionPath = path.join(__dirname, '../../../SafeVision');
+    const safevisionPath = path.join(__dirname, '../../SafeVision');
     const mainScript = path.join(safevisionPath, 'main.py');
     
     // Check if SafeVision main script exists
@@ -32,7 +32,7 @@ async function processWithSafeVision(imagePath: string, options: BlurOptions): P
     const outputPath = path.join(outputDir, outputFileName);
     
     // Build SafeVision command with all options
-    let pythonCommand = `cd "${safevisionPath}" && source venv/bin/activate && python3 main.py -i "${imagePath}" -o "${outputPath}"`;
+    let pythonCommand = `cd "${safevisionPath}" && source safevision_env/bin/activate && python3 main.py -i "${imagePath}" -o "${outputPath}"`;
     
     // Add blur option
     if (options.applyBlur) {
