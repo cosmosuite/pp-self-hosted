@@ -151,57 +151,6 @@ const BlurSettings: React.FC<BlurSettingsProps> = ({ blurRules, onRulesChange, b
             }}
             className="w-full"
           />
-          <div className="flex justify-between text-xs text-gray-500">
-            <span>None</span>
-            <span>Light</span>
-            <span>Medium</span>
-            <span>Heavy</span>
-            <span>Max</span>
-          </div>
-          
-          {/* Quick Intensity Presets */}
-          <div className="grid grid-cols-5 gap-1 mt-2">
-            <Button
-              variant={blurIntensity === 0 ? "default" : "outline"}
-              size="sm"
-              onClick={() => onIntensityChange(0)}
-              className="text-xs h-6"
-            >
-              0%
-            </Button>
-            <Button
-              variant={blurIntensity === 25 ? "default" : "outline"}
-              size="sm"
-              onClick={() => onIntensityChange(25)}
-              className="text-xs h-6"
-            >
-              25%
-            </Button>
-            <Button
-              variant={blurIntensity === 50 ? "default" : "outline"}
-              size="sm"
-              onClick={() => onIntensityChange(50)}
-              className="text-xs h-6"
-            >
-              50%
-            </Button>
-            <Button
-              variant={blurIntensity === 75 ? "default" : "outline"}
-              size="sm"
-              onClick={() => onIntensityChange(75)}
-              className="text-xs h-6"
-            >
-              75%
-            </Button>
-            <Button
-              variant={blurIntensity === 100 ? "default" : "outline"}
-              size="sm"
-              onClick={() => onIntensityChange(100)}
-              className="text-xs h-6"
-            >
-              100%
-            </Button>
-          </div>
         </div>
       </div>
 
