@@ -22,6 +22,7 @@ export interface BlurRules {
   BELLY_COVERED: boolean;
   FEET_COVERED: boolean;
   ARMPITS_COVERED: boolean;
+  useFaceLandmarks: boolean;
 }
 
 export interface Detection {
@@ -44,6 +45,12 @@ export interface SafeVisionResponse {
   censored_image?: string;
   session_id?: string;
   error?: string;
+  processing_info?: {
+    landmarks_used: boolean;
+    blur_applied: boolean;
+    blur_intensity: number;
+    blur_area: number;
+  };
 }
 
 export interface SafeVisionStats {
@@ -53,6 +60,7 @@ export interface SafeVisionStats {
   supported_formats: string[];
   max_file_size_mb: number;
   version: string;
+  landmarks_available: boolean;
 }
 
 export const DEFAULT_BLUR_RULES: BlurRules = {
@@ -74,6 +82,7 @@ export const DEFAULT_BLUR_RULES: BlurRules = {
   BELLY_COVERED: false,
   FEET_COVERED: false,
   ARMPITS_COVERED: false,
+  useFaceLandmarks: true,
 };
 
 export const BLUR_RULE_LABELS = {
@@ -95,4 +104,5 @@ export const BLUR_RULE_LABELS = {
   BELLY_COVERED: 'Belly (Covered)',
   FEET_COVERED: 'Feet (Covered)',
   ARMPITS_COVERED: 'Armpits (Covered)',
+  useFaceLandmarks: 'Use Face Landmarks',
 };

@@ -12,6 +12,9 @@ const { setupSafeVision } = require('../scripts/setup-safevision');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Railway requires binding to 0.0.0.0
+const HOST = process.env.HOST || '0.0.0.0';
+
 // Middleware
 app.use(helmet());
 app.use(cors());
@@ -58,7 +61,32 @@ const upload = multer({
 
 // Routes
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+  const healthCheck = {
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development',
+    version: process.env.npm_package_version || '1.0.0',
+    memory: process.memoryUsage(),
+    platform: process.platform,
+    nodeVersion: process.version
+  };
+  
+  res.status(200).json(healthCheck);
+});
+
+// Root endpoint for Railway health checks
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'PP Self-Hosted Backend API',
+    status: 'running',
+    endpoints: {
+      health: '/api/health',
+      processImage: '/api/process-image',
+      download: '/api/download/:filename',
+      outputs: '/api/outputs'
+    }
+  });
 });
 
 app.post('/api/process-image', upload.single('image'), async (req, res) => {
@@ -182,10 +210,11 @@ async function initializeServer() {
     }
     
     // Start the server
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-      console.log(`Health check: http://localhost:${PORT}/api/health`);
-      console.log(`Image processing: http://localhost:${PORT}/api/process-image`);
+    app.listen(PORT, HOST, () => {
+      console.log(`Server running on ${HOST}:${PORT}`);
+      console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`Health check: http://${HOST}:${PORT}/api/health`);
+      console.log(`Image processing: http://${HOST}:${PORT}/api/process-image`);
     });
     
   } catch (error) {

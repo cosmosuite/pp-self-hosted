@@ -6,12 +6,13 @@ import { Label } from './ui/label';
 import { Alert, AlertDescription } from './ui/alert';
 import { Loader2, Upload, Download } from 'lucide-react';
 import BlurSettings from './BlurSettings';
-import { safeVisionAPI } from '../services/safevisionApi';
+import safeVisionAPI from '../services/safevisionApi';
 import { BlurRules, DEFAULT_BLUR_RULES, SafeVisionResponse } from '../types/safevision';
 
 const ImageProcessor: React.FC = () => {
   const [blurRules, setBlurRules] = useState<BlurRules>(DEFAULT_BLUR_RULES);
   const [blurIntensity, setBlurIntensity] = useState<number>(50); // 0-100 scale
+  const [blurArea, setBlurArea] = useState<number>(100); // 0-100% of detection box
   const [processing, setProcessing] = useState(false);
   const [result, setResult] = useState<SafeVisionResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -23,13 +24,14 @@ const ImageProcessor: React.FC = () => {
 
 
   // Live blur function with debouncing
-  const performLiveBlur = async (rules: BlurRules, intensity?: number, file?: File) => {
+  const performLiveBlur = async (rules: BlurRules, intensity?: number, file?: File, area?: number) => {
     const fileToUse = file || selectedFile;
     console.log('🎯 performLiveBlur called with:', { 
       hasFile: !!fileToUse, 
       fileName: fileToUse?.name,
       rules: rules,
-      intensity: intensity || blurIntensity
+      intensity: intensity || blurIntensity,
+      area: area || blurArea
     });
     
     if (!fileToUse) {
@@ -50,13 +52,15 @@ const ImageProcessor: React.FC = () => {
 
       try {
         const currentIntensity = intensity !== undefined ? intensity : blurIntensity;
+        const currentArea = area !== undefined ? area : blurArea;
         console.log('📤 Sending to API:', { 
           fileName: fileToUse.name, 
           intensity: currentIntensity,
+          area: currentArea,
           rules: rules
         });
         
-        const response = await safeVisionAPI.processImage(fileToUse, rules, threshold, true, currentIntensity);
+        const response = await safeVisionAPI.processImage(fileToUse, rules, threshold, true, currentIntensity, currentArea);
         console.log('✅ API response received:', response);
         setResult(response);
       } catch (err) {
@@ -70,11 +74,15 @@ const ImageProcessor: React.FC = () => {
 
   // Handle blur rules change with live blur
   const handleBlurRulesChange = (newRules: BlurRules) => {
+    console.log('🎯 handleBlurRulesChange called with:', newRules);
     setBlurRules(newRules);
     
     // Trigger live blur if file is selected
     if (selectedFile) {
+      console.log('🎯 File selected, triggering live blur...');
       performLiveBlur(newRules);
+    } else {
+      console.log('🎯 No file selected, skipping live blur');
     }
   };
 
@@ -87,6 +95,18 @@ const ImageProcessor: React.FC = () => {
     if (selectedFile) {
       console.log('🔄 Triggering live blur with intensity:', newIntensity);
       performLiveBlur(blurRules, newIntensity);
+    }
+  };
+
+  // Handle blur area change with live blur
+  const handleBlurAreaChange = (newArea: number) => {
+    console.log('🎯 Blur area changed to:', newArea);
+    setBlurArea(newArea);
+    
+    // Trigger live blur if file is selected
+    if (selectedFile) {
+      console.log('🔄 Triggering live blur with area:', newArea);
+      performLiveBlur(blurRules, undefined, undefined, newArea);
     }
   };
 
@@ -131,7 +151,7 @@ const ImageProcessor: React.FC = () => {
 
     try {
       // Create the full URL for the processed image
-      const imageUrl = `http://localhost:5001/${result.censored_image}`;
+      const imageUrl = `http://localhost:5001/api/v1/image/${result.censored_image}`;
       
       // Fetch the image
       const response = await fetch(imageUrl);
@@ -204,6 +224,8 @@ const ImageProcessor: React.FC = () => {
                       onRulesChange={handleBlurRulesChange}
                       blurIntensity={blurIntensity}
                       onIntensityChange={handleBlurIntensityChange}
+                      blurArea={blurArea}
+                      onAreaChange={handleBlurAreaChange}
                     />
                   </div>
                 </CardContent>
@@ -277,7 +299,7 @@ const ImageProcessor: React.FC = () => {
                         </div>
                     {result && result.censored_image ? (
                       <img
-                        src={`http://localhost:5001/${result.censored_image}`}
+                        src={`http://localhost:5001/api/v1/image/${result.censored_image}`}
                         alt="Processed image"
                         className="max-w-full h-auto rounded border"
                         onError={(e) => {

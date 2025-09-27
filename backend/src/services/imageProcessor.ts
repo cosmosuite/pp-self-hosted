@@ -49,6 +49,21 @@ async function processWithSafeVision(imagePath: string, options: BlurOptions): P
       pythonCommand += ` --full_blur_rule ${options.fullBlurRule}`;
     }
     
+    // Add blur intensity
+    if (options.blurIntensity !== undefined) {
+      pythonCommand += ` --intensity ${options.blurIntensity}`;
+    }
+    
+    // Add blur area
+    if (options.blurArea !== undefined) {
+      pythonCommand += ` --area ${options.blurArea}`;
+    }
+    
+    // Add face landmarks option
+    if (options.useFaceLandmarks !== undefined) {
+      pythonCommand += ` --landmarks ${options.useFaceLandmarks}`;
+    }
+    
     console.log(`Executing SafeVision: ${pythonCommand}`);
     
     const startTime = Date.now();

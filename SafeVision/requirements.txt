@@ -18,6 +18,10 @@ pillow>=9.0.0
 onnx>=1.11.0
 onnxruntime>=1.10.0
 
+# Face Landmark Detection
+dlib>=19.24.0
+mediapipe>=0.10.0
+
 # Progress Bars & CLI Tools
 tqdm>=4.62.0
 
@@ -107,7 +111,11 @@ pywin32>=227; sys_platform == "win32"
 # For Windows users, pywin32 is automatically installed
 # For Linux/Mac users, screen overlay features may not work
 #
+# Face landmark detection setup:
+# python setup_landmarks.py
+#
 # Optional features:
 # - OBS integration requires OBS Studio with WebSocket plugin
 # - Virtual camera requires pyvirtualcam compatible drivers
 # - Screen capture works on all platforms but optimized for Windows
+# - Face landmarks require dlib and the shape_predictor_68_face_landmarks.dat model

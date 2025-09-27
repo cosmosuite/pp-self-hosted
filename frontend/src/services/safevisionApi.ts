@@ -1,4 +1,4 @@
-import { BlurRules, SafeVisionResponse, SafeVisionStats } from '../types/safevision';
+import { BlurRules, SafeVisionResponse } from '../types/safevision';
 
 const API_BASE_URL = 'http://localhost:5001/api/v1';
 
@@ -14,7 +14,8 @@ export class SafeVisionAPI {
     blurRules: BlurRules,
     threshold: number = 0.25,
     blur: boolean = true,
-    blurIntensity: number = 50
+    blurIntensity: number = 50,
+    blurArea: number = 100
   ): Promise<SafeVisionResponse> {
     const formData = new FormData();
     formData.append('file', imageFile);
@@ -28,9 +29,15 @@ export class SafeVisionAPI {
       });
       // Add blur intensity
       formData.append('blur_intensity', blurIntensity.toString());
+      // Add blur area
+      formData.append('blur_area', blurArea.toString());
+      // Add face landmarks setting
+      formData.append('use_face_landmarks', blurRules.useFaceLandmarks.toString());
       // Add timestamp to force processing
       formData.append('timestamp', Date.now().toString());
       console.log('🎚️ Sending blur intensity to API:', blurIntensity);
+      console.log('🎯 Sending blur area to API:', blurArea);
+      console.log('🧠 Sending face landmarks to API:', blurRules.useFaceLandmarks);
     }
 
     const response = await fetch(`${this.baseUrl}/detect`, {
@@ -49,7 +56,8 @@ export class SafeVisionAPI {
       status: result.status,
       censored_available: result.censored_available,
       censored_image: result.censored_image,
-      detections_count: result.detections?.length || 0
+      detections_count: result.detections?.length || 0,
+      processing_info: result.processing_info
     });
     
     // Note: Blur rules are now handled by the API, no need to process in frontend
@@ -61,7 +69,10 @@ export class SafeVisionAPI {
   async processImageBase64(
     imageData: string,
     threshold: number = 0.25,
-    blur: boolean = true
+    blur: boolean = true,
+    blurIntensity: number = 50,
+    blurArea: number = 100,
+    blurRules: BlurRules
   ): Promise<SafeVisionResponse> {
     const response = await fetch(`${this.baseUrl}/detect/base64`, {
       method: 'POST',
@@ -72,6 +83,16 @@ export class SafeVisionAPI {
         image: imageData,
         threshold,
         blur,
+        blur_intensity: blurIntensity,
+        blur_area: blurArea,
+        use_face_landmarks: blurRules.useFaceLandmarks,
+        // Add all blur rules
+        ...Object.fromEntries(
+          Object.entries(blurRules).map(([key, value]) => [
+            `blur_${key.toLowerCase()}`,
+            value
+          ])
+        )
       }),
     });
 
@@ -79,39 +100,39 @@ export class SafeVisionAPI {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    return response.json();
+    const result = await response.json();
+    
+    // Debug logging
+    console.log('🔍 Base64 API Response:', {
+      status: result.status,
+      censored_available: result.censored_available,
+      censored_image: result.censored_image,
+      detections_count: result.detections?.length || 0,
+      processing_info: result.processing_info
+    });
+    
+    return result;
   }
 
-  async getHealth(): Promise<SafeVisionStats> {
+  async getHealth(): Promise<any> {
     const response = await fetch(`${this.baseUrl}/health`);
-    
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-
-    return response.json();
+    return await response.json();
   }
 
-  async getLabels(): Promise<string[]> {
-    const response = await fetch(`${this.baseUrl}/labels`);
-    
+  async downloadProcessedImage(filename: string): Promise<Blob> {
+    const response = await fetch(`${this.baseUrl}/download/${filename}`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-
-    const data = await response.json();
-    return data.labels;
-  }
-
-  async getStats(): Promise<SafeVisionStats> {
-    const response = await fetch(`${this.baseUrl}/stats`);
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return response.json();
+    return await response.blob();
   }
 }
 
+// Create and export an instance
 export const safeVisionAPI = new SafeVisionAPI();
+
+// Also export as default for compatibility
+export default safeVisionAPI;

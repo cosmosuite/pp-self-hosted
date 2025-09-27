@@ -4,7 +4,7 @@ import { Switch } from './ui/switch';
 import { Label } from './ui/label';
 import { Button } from './ui/button';
 import { Slider } from './ui/slider';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Brain } from 'lucide-react';
 import { BlurRules, BLUR_RULE_LABELS } from '../types/safevision';
 
 interface BlurSettingsProps {
@@ -12,9 +12,11 @@ interface BlurSettingsProps {
   onRulesChange: (rules: BlurRules) => void;
   blurIntensity: number;
   onIntensityChange: (intensity: number) => void;
+  blurArea: number;
+  onAreaChange: (area: number) => void;
 }
 
-const BlurSettings: React.FC<BlurSettingsProps> = ({ blurRules, onRulesChange, blurIntensity, onIntensityChange }) => {
+const BlurSettings: React.FC<BlurSettingsProps> = ({ blurRules, onRulesChange, blurIntensity, onIntensityChange, blurArea, onAreaChange }) => {
   const [showDetailedSettings, setShowDetailedSettings] = useState(false);
 
   const handleRuleChange = (label: keyof BlurRules, value: boolean) => {
@@ -25,6 +27,7 @@ const BlurSettings: React.FC<BlurSettingsProps> = ({ blurRules, onRulesChange, b
   };
 
   const applyPreset = (preset: 'faces-only' | 'nudity-only' | 'everything' | 'nothing') => {
+    console.log('🎯 Applying preset:', preset);
     const presets: Record<string, BlurRules> = {
       'faces-only': {
         FACE_FEMALE: true,
@@ -45,6 +48,7 @@ const BlurSettings: React.FC<BlurSettingsProps> = ({ blurRules, onRulesChange, b
         BELLY_COVERED: false,
         FEET_COVERED: false,
         ARMPITS_COVERED: false,
+        useFaceLandmarks: true,
       },
       'nudity-only': {
         FACE_FEMALE: false,
@@ -65,17 +69,53 @@ const BlurSettings: React.FC<BlurSettingsProps> = ({ blurRules, onRulesChange, b
         BELLY_COVERED: false,
         FEET_COVERED: false,
         ARMPITS_COVERED: false,
+        useFaceLandmarks: true,
       },
-      'everything': Object.keys(blurRules).reduce((acc, key) => ({
-        ...acc,
-        [key]: true
-      }), {} as BlurRules),
-      'nothing': Object.keys(blurRules).reduce((acc, key) => ({
-        ...acc,
-        [key]: false
-      }), {} as BlurRules),
+      'everything': {
+        FACE_FEMALE: true,
+        FACE_MALE: true,
+        FEMALE_GENITALIA_EXPOSED: true,
+        MALE_GENITALIA_EXPOSED: true,
+        FEMALE_BREAST_EXPOSED: true,
+        MALE_BREAST_EXPOSED: true,
+        BUTTOCKS_EXPOSED: true,
+        ANUS_EXPOSED: true,
+        BELLY_EXPOSED: true,
+        FEET_EXPOSED: true,
+        ARMPITS_EXPOSED: true,
+        FEMALE_GENITALIA_COVERED: true,
+        FEMALE_BREAST_COVERED: true,
+        BUTTOCKS_COVERED: true,
+        ANUS_COVERED: true,
+        BELLY_COVERED: true,
+        FEET_COVERED: true,
+        ARMPITS_COVERED: true,
+        useFaceLandmarks: true,
+      },
+      'nothing': {
+        FACE_FEMALE: false,
+        FACE_MALE: false,
+        FEMALE_GENITALIA_EXPOSED: false,
+        MALE_GENITALIA_EXPOSED: false,
+        FEMALE_BREAST_EXPOSED: false,
+        MALE_BREAST_EXPOSED: false,
+        BUTTOCKS_EXPOSED: false,
+        ANUS_EXPOSED: false,
+        BELLY_EXPOSED: false,
+        FEET_EXPOSED: false,
+        ARMPITS_EXPOSED: false,
+        FEMALE_GENITALIA_COVERED: false,
+        FEMALE_BREAST_COVERED: false,
+        BUTTOCKS_COVERED: false,
+        ANUS_COVERED: false,
+        BELLY_COVERED: false,
+        FEET_COVERED: false,
+        ARMPITS_COVERED: false,
+        useFaceLandmarks: true,
+      },
     };
 
+    console.log('🎯 Preset rules:', presets[preset]);
     onRulesChange(presets[preset]);
   };
 
@@ -154,6 +194,54 @@ const BlurSettings: React.FC<BlurSettingsProps> = ({ blurRules, onRulesChange, b
         </div>
       </div>
 
+      {/* Blur Area - Always Visible */}
+      <div className="space-y-3">
+        <div className="space-y-2">
+          <Label htmlFor="blur-area" className="text-sm font-medium">
+            Blur Area: {blurArea}%
+          </Label>
+          <Slider
+            id="blur-area"
+            min={0}
+            max={100}
+            step={5}
+            value={[blurArea]}
+            onValueChange={(value) => {
+              console.log('🎯 Blur area slider changed to:', value[0]);
+              onAreaChange(value[0]);
+            }}
+            className="w-full"
+          />
+          <div className="flex justify-between text-xs text-gray-500">
+            <span>Minimal</span>
+            <span>Full</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Face Landmarks Toggle - Always Visible */}
+      <div className="space-y-3">
+        <div className="flex items-center space-x-3">
+          <Switch
+            id="face-landmarks"
+            checked={blurRules.useFaceLandmarks}
+            onCheckedChange={(checked) => 
+              handleRuleChange('useFaceLandmarks', checked)
+            }
+          />
+          <div className="flex items-center space-x-2">
+            <Brain className="h-4 w-4 text-blue-600" />
+            <Label htmlFor="face-landmarks" className="text-sm font-medium">
+              Use Face Landmarks
+            </Label>
+          </div>
+        </div>
+        <p className="text-xs text-gray-500 ml-8">
+          Uses 68-point facial landmarks for precise face coverage including forehead. 
+          Provides more accurate face blurring than rectangular boxes.
+        </p>
+      </div>
+
       {/* Quick Presets - Always Visible */}
       <div className="space-y-3">
         <h4 className="font-medium text-sm">Quick Presets</h4>
@@ -221,7 +309,7 @@ const BlurSettings: React.FC<BlurSettingsProps> = ({ blurRules, onRulesChange, b
                   <Switch
                     id={label}
                     checked={blurRules[label]}
-                    onCheckedChange={(value) => handleRuleChange(label, value)}
+                    onCheckedChange={(checked) => handleRuleChange(label, checked)}
                   />
                 </div>
               ))}
@@ -240,7 +328,7 @@ const BlurSettings: React.FC<BlurSettingsProps> = ({ blurRules, onRulesChange, b
                   <Switch
                     id={label}
                     checked={blurRules[label]}
-                    onCheckedChange={(value) => handleRuleChange(label, value)}
+                    onCheckedChange={(checked) => handleRuleChange(label, checked)}
                   />
                 </div>
               ))}
@@ -259,7 +347,7 @@ const BlurSettings: React.FC<BlurSettingsProps> = ({ blurRules, onRulesChange, b
                   <Switch
                     id={label}
                     checked={blurRules[label]}
-                    onCheckedChange={(value) => handleRuleChange(label, value)}
+                    onCheckedChange={(checked) => handleRuleChange(label, checked)}
                   />
                 </div>
               ))}
