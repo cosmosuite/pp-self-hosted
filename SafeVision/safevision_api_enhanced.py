@@ -165,7 +165,9 @@ class SafeVisionAPI:
                     
                     # Apply custom blur rules to censoring
                     if blur_rules:
-                        self.detector.censor_with_rules(image_path, blur_rules, output_path=censored_path)
+                        # Convert blur_rules to classes list (only include classes where value is True)
+                        classes_to_blur = [label for label, should_blur in blur_rules.items() if should_blur]
+                        self.detector.censor(image_path, apply_blur=True, classes=classes_to_blur, output_path=censored_path)
                     else:
                         self.detector.censor(image_path, apply_blur=True, output_path=censored_path)
                 except Exception as e:
