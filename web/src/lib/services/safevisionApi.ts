@@ -1,23 +1,31 @@
-import { BlurRules, SafeVisionResponse } from '../types/safevision';
-import { API_CONFIG } from '../config/api';
+import { BlurRules, SafeVisionResponse } from '@/types/safevision';
+import { API_CONFIG } from '@/lib/config/api';
 
 export class SafeVisionAPI {
   private baseUrl: string;
+  private healthBaseUrl: string;
 
   constructor(baseUrl?: string) {
-    this.baseUrl = baseUrl || API_CONFIG.SAFEVISION_API_URL;
+    // Use internal Next.js API for processing (with remote SafeVision backend)
+    this.baseUrl = baseUrl || '/api';
+    
+    // Use remote SafeVision GPU API for health checks
+    this.healthBaseUrl = API_CONFIG.SAFEVISION_API_URL;
+    
+    console.log('🚀 SafeVisionAPI: Processing base URL:', this.baseUrl);
+    console.log('🚀 SafeVisionAPI: Health check base URL:', this.healthBaseUrl);
   }
 
   async processImage(
     imageFile: File,
     blurRules: BlurRules,
-    threshold: number = 0.25,
+    threshold: number = API_CONFIG.DEFAULT_THRESHOLD,
     blur: boolean = true,
-    blurIntensity: number = 50,
-    blurArea: number = 100
+    blurIntensity: number = API_CONFIG.DEFAULT_BLUR_INTENSITY,
+    blurArea: number = API_CONFIG.DEFAULT_BLUR_AREA
   ): Promise<SafeVisionResponse> {
     const formData = new FormData();
-    formData.append('file', imageFile);
+    formData.append('image', imageFile);
     formData.append('threshold', threshold.toString());
     formData.append('blur', blur.toString());
     
@@ -54,75 +62,54 @@ export class SafeVisionAPI {
     // Debug logging
     console.log('🔍 API Response:', {
       status: result.status,
-      censored_available: result.censored_available,
-      censored_image: result.censored_image,
-      detections_count: result.detections?.length || 0,
-      processing_info: result.processing_info
+      censored_available: result.success,
+      fileName: result.fileName,
+      stats: result.stats
     });
     
-    // Note: Blur rules are now handled by the API, no need to process in frontend
-    
-    return result;
-  }
-
-
-  async processImageBase64(
-    imageData: string,
-    threshold: number = 0.25,
-    blur: boolean = true,
-    blurIntensity: number = 50,
-    blurArea: number = 100,
-    blurRules: BlurRules
-  ): Promise<SafeVisionResponse> {
-    const response = await fetch(`${this.baseUrl}/detect/base64`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      signal: AbortSignal.timeout(API_CONFIG.TIMEOUT),
-      body: JSON.stringify({
-        image: imageData,
-        threshold,
-        blur,
-        blur_intensity: blurIntensity,
-        blur_area: blurArea,
-        use_face_landmarks: blurRules.useFaceLandmarks,
-        // Add all blur rules
-        ...Object.fromEntries(
-          Object.entries(blurRules).map(([key, value]) => [
-            `blur_${key.toLowerCase()}`,
-            value
-          ])
-        )
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
-    
-    // Debug logging
-    console.log('🔍 Base64 API Response:', {
-      status: result.status,
-      censored_available: result.censored_available,
-      censored_image: result.censored_image,
-      detections_count: result.detections?.length || 0,
-      processing_info: result.processing_info
-    });
-    
-    return result;
+    // Transform the response to match SafeVisionResponse interface
+    return {
+      status: result.success ? 'success' : 'error',
+      censored_image: result.fileName,
+      error: result.error,
+    };
   }
 
   async getHealth(): Promise<any> {
-    const response = await fetch(`${this.baseUrl}/health`, {
-      signal: AbortSignal.timeout(5000) // Faster timeout for health checks
-    });
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    // Always use the remote SafeVision API for health checks
+    const healthUrl = `${this.healthBaseUrl}/api/v1/health`;
+    console.log('🔍 SafeVisionAPI: Getting health from:', healthUrl);
+    
+    try {
+      // Create a controller for manual timeout control
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.HEALTH_CHECK_TIMEOUT);
+      
+      const response = await fetch(healthUrl, {
+        signal: controller.signal,
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      clearTimeout(timeoutId);
+      
+      console.log('🔍 SafeVisionAPI: Health response status:', response.status);
+      
+      if (!response.ok) {
+        console.error('❌ SafeVisionAPI: Health check failed with status:', response.status);
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const healthData = await response.json();
+      console.log('✅ SafeVisionAPI: Health data received:', healthData);
+      return healthData;
+    } catch (error) {
+      console.error('❌ SafeVisionAPI: Health check error:', error);
+      throw error;
     }
-    return await response.json();
   }
 
   async downloadProcessedImage(filename: string): Promise<Blob> {
@@ -134,7 +121,6 @@ export class SafeVisionAPI {
   }
 
   // Retry logic for robust API calls
-  // @ts-ignore - Method will be used in future iterations
   private async executeWithRetry<T>(operation: () => Promise<T>): Promise<T> {
     let lastError: Error = new Error('No attempts made');
     
@@ -160,13 +146,16 @@ export class SafeVisionAPI {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
   
-  // Health check with remote API
+  // Health check with API
   async checkConnection(): Promise<boolean> {
+    console.log('🔍 SafeVisionAPI: checkConnection() called');
     try {
       const health = await this.getHealth();
-      return health.status === 'online' || health.status === 'healthy';
+      const isHealthy = health.status === 'OK' || health.status === 'healthy' || health.status === 'online';
+      console.log(`🔍 SafeVisionAPI: Health status check - status: ${health.status}, isHealthy: ${isHealthy}`);
+      return isHealthy;
     } catch (error) {
-      console.error('❌ SafeVision API connection failed:', error);
+      console.error('❌ SafeVisionAPI: Connection failed:', error);
       return false;
     }
   }

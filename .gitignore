@@ -146,3 +146,6 @@ processed_*.jpeg
 # Local configuration
 config.local.js
 config.local.json
+
+# RunPod MCP
+runpod-mcp/

@@ -5,8 +5,31 @@ import { v4 as uuidv4 } from 'uuid';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { BlurOptions, ProcessingResult, DetectionBox } from '../types';
+import { remoteSafeVisionService } from './remoteSafeVisionService';
 
 const execAsync = promisify(exec);
+
+// Use remote SafeVision GPU API for processing
+async function processWithRemoteSafeVision(imagePath: string, options: BlurOptions): Promise<ProcessingResult> {
+  try {
+    console.log(`🚀 Using Remote SafeVision GPU for processing: ${imagePath}`);
+    console.log('Blur options:', options);
+    
+    // Read image file
+    const imageBuffer = await fs.readFile(imagePath);
+    const fileName = path.basename(imagePath);
+    
+    // Process with remote SafeVision
+    const result = await remoteSafeVisionService.processImage(imageBuffer, fileName, options);
+    
+    console.log(`✅ Remote SafeVision processing completed for ${fileName}`);
+    return result;
+    
+  } catch (error) {
+    console.error('Remote SafeVision processing error:', error);
+    throw new Error(`Remote SafeVision processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
 
 // Call the actual SafeVision Python script for complete blur processing
 async function processWithSafeVision(imagePath: string, options: BlurOptions): Promise<ProcessingResult> {
@@ -126,8 +149,18 @@ export async function processImage(imagePath: string, options: BlurOptions): Pro
       throw new Error(`Image file not found: ${imagePath}`);
     }
 
-    // Use SafeVision for complete processing
-    const result = await processWithSafeVision(imagePath, options);
+    // Choose processing method based on environment
+    const useRemoteGPU = process.env.SAFEVISION_USE_REMOTE === 'true' || process.env.NODE_ENV === 'production';
+    
+    let result: ProcessingResult;
+    
+    if (useRemoteGPU) {
+      console.log('🔄 Using Remote SafeVision GPU');
+      result = await processWithRemoteSafeVision(imagePath, options);
+    } else {
+      console.log('🔄 Using Local SafeVision');
+      result = await processWithSafeVision(imagePath, options);
+    }
     
     // Copy the result to our outputs directory for serving
     const finalOutputPath = path.join(__dirname, '../../outputs', result.fileName);

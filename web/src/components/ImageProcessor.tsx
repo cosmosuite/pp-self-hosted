@@ -1,11 +1,14 @@
+"use client";
+
 import React, { useState, useRef, useEffect } from 'react';
+import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Alert, AlertDescription } from './ui/alert';
 import { Loader2, Upload, Download } from 'lucide-react';
 import BlurSettings from './BlurSettings';
-import safeVisionAPI from '../services/safevisionApi';
-import { BlurRules, DEFAULT_BLUR_RULES, SafeVisionResponse } from '../types/safevision';
+import safeVisionAPI from '@/lib/services/safevisionApi';
+import { BlurRules, DEFAULT_BLUR_RULES, SafeVisionResponse } from '@/types/safevision';
 
 const ImageProcessor: React.FC = () => {
   const [blurRules, setBlurRules] = useState<BlurRules>(DEFAULT_BLUR_RULES);
@@ -19,7 +22,6 @@ const ImageProcessor: React.FC = () => {
   // Live blur is always enabled - no need for state
   const fileInputRef = useRef<HTMLInputElement>(null);
   const liveBlurTimeoutRef = useRef<number | null>(null);
-
 
   // Live blur function with debouncing
   const performLiveBlur = async (rules: BlurRules, intensity?: number, file?: File, area?: number) => {
@@ -149,7 +151,7 @@ const ImageProcessor: React.FC = () => {
 
     try {
       // Create the full URL for the processed image
-      const imageUrl = `http://localhost:5001/api/v1/image/${result.censored_image}`;
+      const imageUrl = `/api/image/${result.censored_image}`;
       
       // Fetch the image
       const response = await fetch(imageUrl);
@@ -185,7 +187,6 @@ const ImageProcessor: React.FC = () => {
     }
   };
 
-
   // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
@@ -194,7 +195,6 @@ const ImageProcessor: React.FC = () => {
       }
     };
   }, []);
-
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -206,121 +206,119 @@ const ImageProcessor: React.FC = () => {
             <CardHeader>
               <CardTitle>Blur Settings</CardTitle>
             </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <BlurSettings 
-                      blurRules={blurRules} 
-                      onRulesChange={handleBlurRulesChange}
-                      blurIntensity={blurIntensity}
-                      onIntensityChange={handleBlurIntensityChange}
-                      blurArea={blurArea}
-                      onAreaChange={handleBlurAreaChange}
-                    />
-                  </div>
-                </CardContent>
+            <CardContent>
+              <div className="space-y-4">
+                <BlurSettings 
+                  blurRules={blurRules} 
+                  onRulesChange={handleBlurRulesChange}
+                  blurIntensity={blurIntensity}
+                  onIntensityChange={handleBlurIntensityChange}
+                  blurArea={blurArea}
+                  onAreaChange={handleBlurAreaChange}
+                />
+              </div>
+            </CardContent>
           </Card>
         </div>
 
         {/* Right - Upload Area (70%) */}
         <div className="lg:col-span-7">
           <Card>
-          <CardHeader>
-            <CardTitle>Upload Image</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {!selectedFile ? (
-              <div
-                className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-gray-400 transition-colors cursor-pointer"
-                onDrop={handleDrop}
-                onDragOver={handleDragOver}
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <p className="text-lg font-medium mb-2">Drop an image here or click to browse</p>
-                <p className="text-sm text-gray-500">Supports: JPG, PNG, GIF, BMP, TIFF</p>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {/* Images Side by Side */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {/* Original Image */}
-                  <div className="space-y-2">
-                    <h4 className="font-medium text-sm text-gray-700">Original</h4>
-                    <div className="relative inline-block">
-                      <img
-                        src={URL.createObjectURL(selectedFile)}
-                        alt="Selected image"
-                        className="max-w-full h-auto rounded border"
-                      />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="absolute top-2 right-2"
-                        onClick={() => setSelectedFile(null)}
-                      >
-                        ✕
-                      </Button>
+            <CardHeader>
+              <CardTitle>Upload Image</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {!selectedFile ? (
+                <div
+                  className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-gray-400 transition-colors cursor-pointer"
+                  onDrop={handleDrop}
+                  onDragOver={handleDragOver}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                  <p className="text-lg font-medium mb-2">Drop an image here or click to browse</p>
+                  <p className="text-sm text-gray-500">Supports: JPG, PNG, GIF, BMP, TIFF</p>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Images Side by Side */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {/* Original Image */}
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-sm text-gray-700">Original</h4>
+                      <div className="relative inline-block">
+                        <Image
+                          src={URL.createObjectURL(selectedFile)}
+                          alt="Selected image"
+                          width={300}
+                          height={200}
+                          className="max-w-full h-auto rounded border"
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="absolute top-2 right-2"
+                          onClick={() => setSelectedFile(null)}
+                        >
+                          ✕
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Processed Image */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium text-sm text-gray-700">Processed</h4>
+                        {result && result.censored_image && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleDownload}
+                            className="h-7 px-2 text-xs"
+                          >
+                            <Download className="h-3 w-3 mr-1" />
+                            Download
+                          </Button>
+                        )}
+                      </div>
+                      {result && result.censored_image ? (
+                        <Image
+                          src={`/api/image/${result.censored_image}`}
+                          alt="Processed image"
+                          width={300}
+                          height={200}
+                          className="max-w-full h-auto rounded border"
+                        />
+                      ) : processing ? (
+                        <div className="flex items-center justify-center min-h-32 border-2 border-dashed border-gray-300 rounded p-8">
+                          <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                          <span className="text-sm text-gray-500">Processing...</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center min-h-32 border-2 border-dashed border-gray-300 rounded p-8 text-gray-400">
+                          <span className="text-sm">Processing...</span>
+                        </div>
+                      )}
                     </div>
                   </div>
-
-                      {/* Processed Image */}
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-medium text-sm text-gray-700">Processed</h4>
-                          {result && result.censored_image && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={handleDownload}
-                              className="h-7 px-2 text-xs"
-                            >
-                              <Download className="h-3 w-3 mr-1" />
-                              Download
-                            </Button>
-                          )}
-                        </div>
-                    {result && result.censored_image ? (
-                      <img
-                        src={`http://localhost:5001/api/v1/image/${result.censored_image}`}
-                        alt="Processed image"
-                        className="max-w-full h-auto rounded border"
-                        onError={(e) => {
-                          console.error('Image failed to load:', (e.target as HTMLImageElement)?.src);
-                        }}
-                        onLoad={(e) => {
-                          console.log('Image loaded successfully:', (e.target as HTMLImageElement)?.src);
-                        }}
-                      />
-                    ) : processing ? (
-                      <div className="flex items-center justify-center min-h-32 border-2 border-dashed border-gray-300 rounded p-8">
-                        <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                        <span className="text-sm text-gray-500">Processing...</span>
-                      </div>
-                        ) : (
-                          <div className="flex items-center justify-center min-h-32 border-2 border-dashed border-gray-300 rounded p-8 text-gray-400">
-                            <span className="text-sm">Processing...</span>
-                          </div>
-                        )}
+                  
+                  {/* File Info */}
+                  <div className="text-center">
+                    <p className="text-sm text-gray-600">
+                      Selected: {selectedFile.name}
+                    </p>
                   </div>
                 </div>
-                
-                    {/* File Info */}
-                    <div className="text-center">
-                      <p className="text-sm text-gray-600">
-                        Selected: {selectedFile.name}
-                      </p>
-                    </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
 

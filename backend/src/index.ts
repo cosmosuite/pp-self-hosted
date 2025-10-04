@@ -10,7 +10,7 @@ import { BlurOptions } from './types';
 const { setupSafeVision } = require('../scripts/setup-safevision');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = Number(process.env.PORT) || 3001;
 
 // Railway requires binding to 0.0.0.0
 const HOST = process.env.HOST || '0.0.0.0';
@@ -108,7 +108,10 @@ app.post('/api/process-image', upload.single('image'), async (req, res) => {
       solidColor: req.body.solidColor === 'true',
       maskColor: req.body.maskColor ? JSON.parse(req.body.maskColor) : [0, 0, 0],
       fullBlurRule: parseInt(req.body.fullBlurRule) || 0,
-      threshold: parseFloat(req.body.threshold) || 0.25
+      threshold: parseFloat(req.body.threshold) || 0.25,
+      blurIntensity: parseInt(req.body.blurIntensity) || 50,
+      blurArea: parseInt(req.body.blurArea) || 100,
+      useFaceLandmarks: req.body.useFaceLandmarks === 'true'
     };
 
     console.log('Processing options:', blurOptions);

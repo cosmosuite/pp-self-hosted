@@ -1,10 +1,12 @@
+"use client";
+
 import React, { useState } from 'react';
 import { Switch } from './ui/switch';
 import { Label } from './ui/label';
 import { Button } from './ui/button';
 import { Slider } from './ui/slider';
 import { Eye, EyeOff, Brain } from 'lucide-react';
-import { BlurRules, BLUR_RULE_LABELS } from '../types/safevision';
+import { BlurRules, BLUR_RULE_LABELS } from '@/types/safevision';
 
 interface BlurSettingsProps {
   blurRules: BlurRules;
@@ -15,7 +17,14 @@ interface BlurSettingsProps {
   onAreaChange: (area: number) => void;
 }
 
-const BlurSettings: React.FC<BlurSettingsProps> = ({ blurRules, onRulesChange, blurIntensity, onIntensityChange, blurArea, onAreaChange }) => {
+const BlurSettings: React.FC<BlurSettingsProps> = ({ 
+  blurRules, 
+  onRulesChange, 
+  blurIntensity, 
+  onIntensityChange, 
+  blurArea, 
+  onAreaChange 
+}) => {
   const [showDetailedSettings, setShowDetailedSettings] = useState(false);
 
   const handleRuleChange = (label: keyof BlurRules, value: boolean) => {
@@ -159,7 +168,7 @@ const BlurSettings: React.FC<BlurSettingsProps> = ({ blurRules, onRulesChange, b
     'BELLY_EXPOSED',
     'FEET_EXPOSED',
     'ARMPITS_EXPOSED',
-  ];
+ ];
   const coveredLabels: (keyof BlurRules)[] = [
     'FEMALE_GENITALIA_COVERED',
     'FEMALE_BREAST_COVERED',
