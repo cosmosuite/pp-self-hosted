@@ -1,6 +1,7 @@
 import requests
 import json
 import os
+import sys
 from typing import Optional, Dict, Any, BinaryIO
 
 class RunPodClient:
@@ -67,9 +68,10 @@ class RunPodClient:
             if session_id:
                 data['session_id'] = session_id
             
-            print(f"DEBUG: Sending to {self.base_url}/api/v1/detect")
-            print(f"DEBUG: files keys: {list(files.keys())}")
-            print(f"DEBUG: data: {data}")
+            sys.stderr.write(f"DEBUG: Sending to {self.base_url}/api/v1/detect\n")
+            sys.stderr.write(f"DEBUG: files keys: {list(files.keys())}\n")
+            sys.stderr.write(f"DEBUG: data: {data}\n")
+            sys.stderr.flush()
             
             response = self.session.post(
                 f'{self.base_url}/api/v1/detect',
@@ -78,8 +80,9 @@ class RunPodClient:
                 timeout=60
             )
             
-            print(f"DEBUG: Response status: {response.status_code}")
-            print(f"DEBUG: Response text: {response.text[:500]}")
+            sys.stderr.write(f"DEBUG: Response status: {response.status_code}\n")
+            sys.stderr.write(f"DEBUG: Response text: {response.text[:500]}\n")
+            sys.stderr.flush()
             
             response.raise_for_status()
             return response.json()
