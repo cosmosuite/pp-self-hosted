@@ -2,7 +2,6 @@ import os
 import cv2
 import numpy as np
 import mediapipe as mp
-import tensorflow as tf
 from PIL import Image
 import io
 import base64
