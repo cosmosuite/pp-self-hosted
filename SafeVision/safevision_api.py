@@ -10,8 +10,6 @@ import json
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
-import face_recognition
-import dlib
 import warnings
 from datetime import datetime
 from main import NudeDetector
