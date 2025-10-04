@@ -433,12 +433,16 @@ def detect_v1():
         detections = nude_detector.detect(file_path)
         print(f"🔍 Detected {len(detections)} items")
         
+        # Debug: Print first detection to see structure
+        if detections:
+            print(f"📦 Sample detection: {detections[0]}")
+        
         # Apply blur if requested
         censored_image = None
         if blur and blur_rules:
             # Convert blur_rules to classes list (only include classes where value is True)
             classes_to_blur = [label for label, should_blur in blur_rules.items() if should_blur]
-            print(f"🔍 Classes to blur: {classes_to_blur}")
+            print(f"🎚️ Classes to blur: {classes_to_blur}")
             
             base_name = os.path.splitext(unique_filename)[0]
             censored_path = os.path.join('api_outputs', f"{base_name}_censored.jpg")
@@ -450,10 +454,12 @@ def detect_v1():
         # Format response
         formatted_detections = []
         for det in detections:
+            # Handle both 'box' and 'bbox' for compatibility
+            bbox = det.get('box') or det.get('bbox')
             formatted_detections.append({
-                'label': det['class'],
-                'confidence': det['score'],
-                'bounding_box': det['box']
+                'label': det.get('class') or det.get('label'),
+                'confidence': det.get('score') or det.get('confidence'),
+                'bounding_box': bbox
             })
         
         response = {
