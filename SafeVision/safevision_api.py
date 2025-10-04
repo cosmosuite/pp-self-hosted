@@ -7,7 +7,7 @@ import io
 import base64
 import logging
 import json
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 import warnings
@@ -628,6 +628,15 @@ def blur_regions_endpoint():
     except Exception as e:
         logger.error(f"Error in blur_regions endpoint: {str(e)}")
         return jsonify({"error": str(e)}), 500
+
+@app.route('/api_outputs/<path:filename>', methods=['GET'])
+def serve_output_image(filename):
+    """Serve censored images from api_outputs directory"""
+    try:
+        return send_from_directory('api_outputs', filename)
+    except Exception as e:
+        logger.error(f"Error serving image {filename}: {str(e)}")
+        return jsonify({"error": "Image not found"}), 404
 
 if __name__ == '__main__':
     print("🚀 Starting SafeVision API Server...")
