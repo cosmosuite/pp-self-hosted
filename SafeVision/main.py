@@ -238,9 +238,9 @@ class NudeDetector:
             should_blur = self.should_apply_blur(label)
             print(f"Label: {label}, Should blur: {should_blur}")
 
-            if apply_blur and "EXPOSED" in label and should_blur:
+            if apply_blur and should_blur:
                 print(f"Blur should be applied to: {label}")
-                # Blur only the regions labeled as "EXPOSED" and not in exceptions
+                # Blur the regions that are in the blur rules
                 img_blur[y:y + h, x:x + w] = cv2.GaussianBlur(img_blur[y:y + h, x:x + w], (23, 23), 30)
                 exposed_count += 1
 
