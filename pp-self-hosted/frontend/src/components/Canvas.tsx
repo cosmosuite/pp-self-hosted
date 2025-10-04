@@ -1,14 +1,16 @@
 import React from 'react';
 import { ProcessResult } from '../types';
-import { Download } from 'lucide-react';
+import { Download, Upload, RefreshCw } from 'lucide-react';
 
 interface CanvasProps {
   imageUrl: string | null;
   result: ProcessResult | null;
   censoredImageUrl: string | null;
+  onReprocess: () => void;
+  onReset: () => void;
 }
 
-export const Canvas: React.FC<CanvasProps> = ({ imageUrl, result, censoredImageUrl }) => {
+export const Canvas: React.FC<CanvasProps> = ({ imageUrl, result, censoredImageUrl, onReprocess, onReset }) => {
   const getRiskClass = (risk: string) => {
     switch (risk.toLowerCase()) {
       case 'critical': return 'risk-critical';
@@ -53,8 +55,8 @@ export const Canvas: React.FC<CanvasProps> = ({ imageUrl, result, censoredImageU
                 </div>
               </div>
 
-              {censoredImageUrl && (
-                <div style={{ marginTop: '1rem' }}>
+              <div style={{ marginTop: '1rem', display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                {censoredImageUrl && (
                   <a 
                     href={censoredImageUrl} 
                     download 
@@ -63,8 +65,24 @@ export const Canvas: React.FC<CanvasProps> = ({ imageUrl, result, censoredImageU
                     <Download size={18} />
                     Download Blurred Image
                   </a>
-                </div>
-              )}
+                )}
+                <button 
+                  onClick={onReprocess} 
+                  className="btn btn-secondary"
+                  title="Reprocess with current settings"
+                >
+                  <RefreshCw size={18} />
+                  Reprocess
+                </button>
+                <button 
+                  onClick={onReset} 
+                  className="btn btn-secondary"
+                  title="Upload a new image"
+                >
+                  <Upload size={18} />
+                  New Image
+                </button>
+              </div>
             </div>
           )}
           
