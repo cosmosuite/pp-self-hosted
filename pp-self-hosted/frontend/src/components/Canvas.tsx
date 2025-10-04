@@ -34,24 +34,12 @@ export const Canvas: React.FC<CanvasProps> = ({ imageUrl, result, censoredImageU
             />
           </div>
 
-          {result && result.data && (
+          {result && result.status === 'success' && (
             <div className="detection-info">
               <div className="detection-stats">
                 <div className="stat-item">
                   <span className="stat-label">Detections</span>
-                  <span className="stat-value">{result.data.detections_count || 0}</span>
-                </div>
-                <div className="stat-item">
-                  <span className="stat-label">Risk Level</span>
-                  <span className={`stat-value ${getRiskClass(result.data.risk_level || 'safe')}`}>
-                    {result.data.risk_level || 'SAFE'}
-                  </span>
-                </div>
-                <div className="stat-item">
-                  <span className="stat-label">Status</span>
-                  <span className={`stat-value ${result.data.is_safe ? 'risk-safe' : 'risk-critical'}`}>
-                    {result.data.is_safe ? 'Safe' : 'NSFW'}
-                  </span>
+                  <span className="stat-value">{result.detections?.length || 0}</span>
                 </div>
               </div>
 
