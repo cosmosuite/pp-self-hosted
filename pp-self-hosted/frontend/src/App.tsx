@@ -67,16 +67,11 @@ function App() {
     setCurrentImage(imageUrl);
 
     try {
-      const invertedRules: any = {};
-      Object.entries(blurRules).forEach(([key, value]) => {
-        invertedRules[key] = !value;
-      });
-      
       const result = await api.processImage(
         item.file,
         true,
         0.25,
-        invertedRules,
+        blurRules,
         blurSettings.useFaceLandmarks
       );
 
