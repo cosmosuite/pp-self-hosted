@@ -63,7 +63,8 @@ class RunPodClient:
             }
             
             if blur_rules:
-                data['blur_rules'] = json.dumps(blur_rules)
+                blur_rules_json = json.dumps(blur_rules)
+                files['blur_rules'] = ('blur_rules.json', blur_rules_json, 'application/json')
             
             if session_id:
                 data['session_id'] = session_id
