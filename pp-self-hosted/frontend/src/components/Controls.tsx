@@ -15,17 +15,13 @@ export const Controls: React.FC<ControlsProps> = ({
   onBlurRulesChange,
   onBlurSettingsChange
 }) => {
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-    'NSFW - Critical': true,
-    'NSFW - High': true,
-    'NSFW - Moderate': false,
-    'NSFW - Low': false,
-    'Face Controls': false,
-    'Advanced': false,
-    'Blur Settings': true
+  const [expandedSections, setExpandedSections] = useState({
+    detections: true,
+    blur: true,
+    advanced: false
   });
 
-  const toggleSection = (section: string) => {
+  const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
   };
 
@@ -33,81 +29,84 @@ export const Controls: React.FC<ControlsProps> = ({
     onBlurRulesChange({ ...blurRules, [key]: !blurRules[key] });
   };
 
-  const categoryGroups = {
-    'NSFW - Critical': [
-      { key: 'FEMALE_GENITALIA_EXPOSED' as keyof BlurRules, label: 'Female' },
-      { key: 'MALE_GENITALIA_EXPOSED' as keyof BlurRules, label: 'Male' }
-    ],
-    'NSFW - High': [
-      { key: 'FEMALE_BREAST_EXPOSED' as keyof BlurRules, label: 'Breasts' },
-      { key: 'ANUS_EXPOSED' as keyof BlurRules, label: 'Anus' }
-    ],
-    'NSFW - Moderate': [
-      { key: 'BUTTOCKS_EXPOSED' as keyof BlurRules, label: 'Buttocks' }
-    ],
-    'NSFW - Low': [
-      { key: 'MALE_BREAST_EXPOSED' as keyof BlurRules, label: 'M. Chest' },
-      { key: 'BELLY_EXPOSED' as keyof BlurRules, label: 'Belly' },
-      { key: 'FEET_EXPOSED' as keyof BlurRules, label: 'Feet' },
-      { key: 'ARMPITS_EXPOSED' as keyof BlurRules, label: 'Armpits' }
-    ],
-    'Face Controls': [
-      { key: 'FACE_FEMALE' as keyof BlurRules, label: 'Female' },
-      { key: 'FACE_MALE' as keyof BlurRules, label: 'Male' }
-    ]
+  const applyPreset = (preset: 'face' | 'nudity' | 'both') => {
+    const faceControls = {
+      FACE_FEMALE: true,
+      FACE_MALE: true
+    };
+
+    const nudityControls = {
+      FEMALE_GENITALIA_EXPOSED: true,
+      MALE_GENITALIA_EXPOSED: true,
+      FEMALE_BREAST_EXPOSED: true,
+      ANUS_EXPOSED: true,
+      BUTTOCKS_EXPOSED: true,
+      MALE_BREAST_EXPOSED: true,
+      BELLY_EXPOSED: true,
+      FEET_EXPOSED: true,
+      ARMPITS_EXPOSED: true
+    };
+
+    if (preset === 'face') {
+      onBlurRulesChange({ ...faceControls, ...Object.fromEntries(Object.keys(nudityControls).map(k => [k, false])) });
+    } else if (preset === 'nudity') {
+      onBlurRulesChange({ ...nudityControls, ...Object.fromEntries(Object.keys(faceControls).map(k => [k, false])) });
+    } else {
+      onBlurRulesChange({ ...faceControls, ...nudityControls });
+    }
   };
+
+  const allControls = [
+    { key: 'FACE_FEMALE' as keyof BlurRules, label: 'Female Face', category: 'face' },
+    { key: 'FACE_MALE' as keyof BlurRules, label: 'Male Face', category: 'face' },
+    { key: 'FEMALE_GENITALIA_EXPOSED' as keyof BlurRules, label: 'Female Genitalia', category: 'nudity' },
+    { key: 'MALE_GENITALIA_EXPOSED' as keyof BlurRules, label: 'Male Genitalia', category: 'nudity' },
+    { key: 'FEMALE_BREAST_EXPOSED' as keyof BlurRules, label: 'Female Breasts', category: 'nudity' },
+    { key: 'ANUS_EXPOSED' as keyof BlurRules, label: 'Anus', category: 'nudity' },
+    { key: 'BUTTOCKS_EXPOSED' as keyof BlurRules, label: 'Buttocks', category: 'nudity' },
+    { key: 'MALE_BREAST_EXPOSED' as keyof BlurRules, label: 'Male Chest', category: 'nudity' },
+    { key: 'BELLY_EXPOSED' as keyof BlurRules, label: 'Belly', category: 'nudity' },
+    { key: 'FEET_EXPOSED' as keyof BlurRules, label: 'Feet', category: 'nudity' },
+    { key: 'ARMPITS_EXPOSED' as keyof BlurRules, label: 'Armpits', category: 'nudity' }
+  ];
 
   return (
     <div className="sidebar">
       <div className="section">
-        <h3 className="section-title">Detection Categories</h3>
-        
-        {Object.entries(categoryGroups).map(([groupName, items]) => (
-          <div key={groupName} className="accordion-item">
-            <div className="accordion-header" onClick={() => toggleSection(groupName)}>
-              {expandedSections[groupName] ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-              <span>{groupName}</span>
-              <span className="badge">{items.filter(i => blurRules[i.key]).length}/{items.length}</span>
-            </div>
-            {expandedSections[groupName] && (
-              <div className="accordion-content">
-                <div className="compact-toggle-grid">
-                  {items.map(({ key, label }) => (
-                    <div key={key} className="compact-toggle">
-                      <label className="compact-toggle-label">
-                        <input
-                          type="checkbox"
-                          checked={blurRules[key] || false}
-                          onChange={() => toggleRule(key)}
-                        />
-                        <span>{label}</span>
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
+        <h3 className="section-title">Quick Presets</h3>
+        <div className="preset-buttons">
+          <button className="preset-btn" onClick={() => applyPreset('face')}>
+            Face
+          </button>
+          <button className="preset-btn" onClick={() => applyPreset('nudity')}>
+            Nudity
+          </button>
+          <button className="preset-btn" onClick={() => applyPreset('both')}>
+            Both
+          </button>
+        </div>
+      </div>
 
+      <div className="section">
         <div className="accordion-item">
-          <div className="accordion-header" onClick={() => toggleSection('Advanced')}>
-            {expandedSections['Advanced'] ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-            <span>Advanced Options</span>
+          <div className="accordion-header" onClick={() => toggleSection('detections')}>
+            {expandedSections.detections ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+            <span>Detections</span>
+            <span className="badge">{allControls.filter(c => blurRules[c.key]).length}/{allControls.length}</span>
           </div>
-          {expandedSections['Advanced'] && (
+          {expandedSections.detections && (
             <div className="accordion-content">
-              <div className="compact-toggle">
-                <label className="compact-toggle-label">
-                  <input
-                    type="checkbox"
-                    checked={blurSettings.useFaceLandmarks}
-                    onChange={(e) => 
-                      onBlurSettingsChange({ ...blurSettings, useFaceLandmarks: e.target.checked })
-                    }
-                  />
-                  <span>⭐ Face Landmarks</span>
-                </label>
+              <div className="detection-grid">
+                {allControls.map(({ key, label }) => (
+                  <label key={key} className="detection-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={blurRules[key] || false}
+                      onChange={() => toggleRule(key)}
+                    />
+                    <span>{label}</span>
+                  </label>
+                ))}
               </div>
             </div>
           )}
@@ -116,11 +115,11 @@ export const Controls: React.FC<ControlsProps> = ({
 
       <div className="section">
         <div className="accordion-item">
-          <div className="accordion-header" onClick={() => toggleSection('Blur Settings')}>
-            {expandedSections['Blur Settings'] ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+          <div className="accordion-header" onClick={() => toggleSection('blur')}>
+            {expandedSections.blur ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
             <span>Blur Settings</span>
           </div>
-          {expandedSections['Blur Settings'] && (
+          {expandedSections.blur && (
             <div className="accordion-content">
               <div className="blur-type-selector">
                 {['blur', 'pixelation', 'color'].map(type => (
@@ -163,6 +162,29 @@ export const Controls: React.FC<ControlsProps> = ({
                 />
                 <span className="slider-value-inline">{blurSettings.size}%</span>
               </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="section">
+        <div className="accordion-item">
+          <div className="accordion-header" onClick={() => toggleSection('advanced')}>
+            {expandedSections.advanced ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+            <span>Advanced</span>
+          </div>
+          {expandedSections.advanced && (
+            <div className="accordion-content">
+              <label className="detection-checkbox">
+                <input
+                  type="checkbox"
+                  checked={blurSettings.useFaceLandmarks}
+                  onChange={(e) => 
+                    onBlurSettingsChange({ ...blurSettings, useFaceLandmarks: e.target.checked })
+                  }
+                />
+                <span>⭐ Face Landmarks (68-point)</span>
+              </label>
             </div>
           )}
         </div>
