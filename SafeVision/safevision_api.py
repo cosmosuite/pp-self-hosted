@@ -7,11 +7,15 @@ from PIL import Image
 import io
 import base64
 import logging
+import json
 from flask import Flask, request, jsonify
+from flask_cors import CORS
+from werkzeug.utils import secure_filename
 import face_recognition
 import dlib
 import warnings
 from datetime import datetime
+from main import NudeDetector
 
 # Suppress warnings
 warnings.filterwarnings("ignore")
@@ -359,11 +363,120 @@ class SafeVisionProcessor:
 
 # Initialize Flask app
 app = Flask(__name__)
+CORS(app)
 processor = SafeVisionProcessor()
+
+# Initialize NudeDetector for blur_rules support
+try:
+    nude_detector = NudeDetector()
+    print("✅ NudeDetector loaded successfully")
+except Exception as e:
+    print(f"❌ Failed to load NudeDetector: {e}")
+    nude_detector = None
+
+@app.route('/api/v1/health', methods=['GET'])
+def health_check_v1():
+    return jsonify({
+        "status": "online",
+        "model_loaded": nude_detector is not None,
+        "timestamp": datetime.now().isoformat()
+    })
 
 @app.route('/health', methods=['GET'])
 def health_check():
     return jsonify({"status": "healthy", "timestamp": datetime.now().isoformat()})
+
+@app.route('/api/v1/detect', methods=['POST'])
+def detect_v1():
+    """Detect nudity with custom blur_rules support"""
+    if 'image' not in request.files:
+        return jsonify({
+            'error': 'No image file provided',
+            'status': 'error'
+        }), 400
+    
+    file = request.files['image']
+    if file.filename == '':
+        return jsonify({
+            'error': 'No file selected',
+            'status': 'error'
+        }), 400
+    
+    try:
+        # Get parameters
+        threshold = float(request.form.get('threshold', 0.25))
+        blur = request.form.get('blur', 'false').lower() == 'true'
+        session_id = request.form.get('session_id', '')
+        
+        # Get blur rules from JSON
+        blur_rules_json = request.form.get('blur_rules')
+        blur_rules = None
+        if blur_rules_json:
+            try:
+                blur_rules = json.loads(blur_rules_json)
+                print(f"🎚️ Received blur_rules: {blur_rules}")
+            except:
+                print(f"❌ Failed to parse blur_rules: {blur_rules_json}")
+                blur_rules = None
+        
+        # Save uploaded file
+        filename = secure_filename(file.filename)
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
+        unique_filename = f"{timestamp}_{filename}"
+        file_path = os.path.join('api_uploads', unique_filename)
+        file.save(file_path)
+        
+        # Detect using NudeDetector
+        if nude_detector is None:
+            return jsonify({
+                'error': 'NudeDetector not loaded',
+                'status': 'error'
+            }), 500
+        
+        detections = nude_detector.detect(file_path)
+        print(f"🔍 Detected {len(detections)} items")
+        
+        # Apply blur if requested
+        censored_image = None
+        if blur and blur_rules:
+            # Convert blur_rules to classes list (only include classes where value is True)
+            classes_to_blur = [label for label, should_blur in blur_rules.items() if should_blur]
+            print(f"🔍 Classes to blur: {classes_to_blur}")
+            
+            base_name = os.path.splitext(unique_filename)[0]
+            censored_path = os.path.join('api_outputs', f"{base_name}_censored.jpg")
+            
+            nude_detector.censor(file_path, apply_blur=True, classes=classes_to_blur, output_path=censored_path)
+            censored_image = censored_path
+            print(f"✅ Censored image saved: {censored_path}")
+        
+        # Format response
+        formatted_detections = []
+        for det in detections:
+            formatted_detections.append({
+                'label': det['class'],
+                'confidence': det['score'],
+                'bounding_box': det['box']
+            })
+        
+        response = {
+            'status': 'success',
+            'detections': formatted_detections,
+            'censored_available': censored_image is not None,
+            'censored_image': censored_image,
+            'session_id': session_id
+        }
+        
+        return jsonify(response)
+        
+    except Exception as e:
+        print(f"❌ Error in /api/v1/detect: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'error': str(e),
+            'status': 'error'
+        }), 500
 
 @app.route('/process', methods=['POST'])
 def process_image_endpoint():
@@ -514,5 +627,8 @@ def blur_regions_endpoint():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    # Run on port 8000 to avoid conflicts
-    app.run(host='0.0.0.0', port=8000, debug=False)
+    print("🚀 Starting SafeVision API Server...")
+    print("📡 Host: 0.0.0.0")
+    print("🔌 Port: 5001")
+    print("🔍 NudeDetector loaded:", nude_detector is not None)
+    app.run(host='0.0.0.0', port=5001, debug=False)
