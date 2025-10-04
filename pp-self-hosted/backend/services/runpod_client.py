@@ -58,7 +58,8 @@ class RunPodClient:
             
             data = {
                 'blur': 'true' if blur else 'false',
-                'threshold': str(threshold)
+                'threshold': str(threshold),
+                'use_face_landmarks': 'true' if use_face_landmarks else 'false'
             }
             
             if blur_rules:
