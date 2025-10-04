@@ -19,7 +19,9 @@ class RunPodClient:
         try:
             response = self.session.get(f'{self.base_url}/api/v1/health')
             response.raise_for_status()
-            return response.json()
+            result = response.json()
+            result['status'] = 'online'
+            return result
         except Exception as e:
             return {'error': str(e), 'status': 'offline'}
     
