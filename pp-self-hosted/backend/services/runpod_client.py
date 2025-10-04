@@ -55,7 +55,7 @@ class RunPodClient:
             session_id: Optional session tracking ID
         """
         try:
-            files = {'image': (filename, image_file, 'image/jpeg')}
+            files = {'file': (filename, image_file, 'image/jpeg')}
             
             data = {
                 'blur': 'true' if blur else 'false',
