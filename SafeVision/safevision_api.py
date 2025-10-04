@@ -447,7 +447,8 @@ def detect_v1():
             base_name = os.path.splitext(unique_filename)[0]
             censored_path = os.path.join('api_outputs', f"{base_name}_censored.jpg")
             
-            nude_detector.censor(file_path, apply_blur=True, classes=classes_to_blur, output_path=censored_path)
+            # Pass full_blur_rule=999 to disable full-image blur (only blur specific regions)
+            nude_detector.censor(file_path, apply_blur=True, classes=classes_to_blur, output_path=censored_path, full_blur_rule=999)
             censored_image = censored_path
             print(f"✅ Censored image saved: {censored_path}")
         
