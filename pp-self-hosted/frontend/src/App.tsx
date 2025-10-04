@@ -99,6 +99,20 @@ function App() {
     }
   };
 
+  const handleReprocess = async () => {
+    const lastItem = queue.find(q => q.status === 'completed' || q.status === 'error');
+    if (lastItem) {
+      await processFile(lastItem);
+    }
+  };
+
+  const handleReset = () => {
+    setCurrentImage(null);
+    setCurrentResult(null);
+    setCensoredImageUrl(null);
+    setQueue([]);
+  };
+
   return (
     <div className="app">
       <header className="header">
@@ -124,6 +138,8 @@ function App() {
             imageUrl={currentImage}
             result={currentResult}
             censoredImageUrl={censoredImageUrl}
+            onReprocess={handleReprocess}
+            onReset={handleReset}
           />
         ) : (
           <div className="canvas-area">
