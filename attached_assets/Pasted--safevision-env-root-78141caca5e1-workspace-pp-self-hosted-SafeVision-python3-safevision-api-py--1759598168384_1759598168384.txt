@@ -1,0 +1,45 @@
+(safevision_env) root@78141caca5e1:/workspace/pp-self-hosted/SafeVision# python3 safevision_api.py
+[ERROR:0@2.890] global persistence.cpp:566 open Can't open file: 'Models/haarcascade_frontalface_default.xml' in read mode
+[ERROR:0@2.890] global persistence.cpp:566 open Can't open file: 'Models/haarcascade_eye.xml' in read mode
+[ERROR:0@2.890] global persistence.cpp:566 open Can't open file: 'Models/haarcascade_hand.xml' in read mode
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1759598156.118787   20195 gl_context_egl.cc:85] Successfully initialized EGL. Major : 1 Minor: 5
+I0000 00:00:1759598156.201106   20281 gl_context.cc:357] GL version: 3.2 (OpenGL ES 3.2 NVIDIA 565.57.01), renderer: NVIDIA L4/PCIe/SSE2
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+W0000 00:00:1759598156.207662   20276 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+I0000 00:00:1759598156.211427   20195 gl_context_egl.cc:85] Successfully initialized EGL. Major : 1 Minor: 5
+I0000 00:00:1759598156.260752   20335 gl_context.cc:357] GL version: 3.2 (OpenGL ES 3.2 NVIDIA 565.57.01), renderer: NVIDIA L4/PCIe/SSE2
+W0000 00:00:1759598156.271949   20285 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+I0000 00:00:1759598156.274065   20195 gl_context_egl.cc:85] Successfully initialized EGL. Major : 1 Minor: 5
+W0000 00:00:1759598156.282036   20306 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+I0000 00:00:1759598156.320377   20388 gl_context.cc:357] GL version: 3.2 (OpenGL ES 3.2 NVIDIA 565.57.01), renderer: NVIDIA L4/PCIe/SSE2
+I0000 00:00:1759598156.333278   20195 gl_context_egl.cc:85] Successfully initialized EGL. Major : 1 Minor: 5
+W0000 00:00:1759598156.335172   20339 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1759598156.360281   20361 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+I0000 00:00:1759598156.391604   20460 gl_context.cc:357] GL version: 3.2 (OpenGL ES 3.2 NVIDIA 565.57.01), renderer: NVIDIA L4/PCIe/SSE2
+I0000 00:00:1759598156.414331   20195 gl_context_egl.cc:85] Successfully initialized EGL. Major : 1 Minor: 5
+I0000 00:00:1759598156.466377   20514 gl_context.cc:357] GL version: 3.2 (OpenGL ES 3.2 NVIDIA 565.57.01), renderer: NVIDIA L4/PCIe/SSE2
+W0000 00:00:1759598156.481376   20464 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1759598156.486040   20399 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+I0000 00:00:1759598156.494330   20195 gl_context_egl.cc:85] Successfully initialized EGL. Major : 1 Minor: 5
+W0000 00:00:1759598156.500102   20480 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1759598156.516028   20407 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+I0000 00:00:1759598156.542543   20586 gl_context.cc:357] GL version: 3.2 (OpenGL ES 3.2 NVIDIA 565.57.01), renderer: NVIDIA L4/PCIe/SSE2
+I0000 00:00:1759598156.567815   20195 gl_context_egl.cc:85] Successfully initialized EGL. Major : 1 Minor: 5
+I0000 00:00:1759598156.630453   20639 gl_context.cc:357] GL version: 3.2 (OpenGL ES 3.2 NVIDIA 565.57.01), renderer: NVIDIA L4/PCIe/SSE2
+W0000 00:00:1759598156.636127   20515 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1759598156.657179   20590 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1759598156.771175   20537 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1759598156.880833   20610 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+✅ NudeDetector loaded successfully
+🚀 Starting SafeVision API Server...
+📡 Host: 0.0.0.0
+🔌 Port: 5001
+🔍 NudeDetector loaded: True
+ * Serving Flask app 'safevision_api'
+ * Debug mode: off
+INFO:werkzeug:WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://10.128.2.2:5001
+INFO:werkzeug:Press CTRL+C to quit
