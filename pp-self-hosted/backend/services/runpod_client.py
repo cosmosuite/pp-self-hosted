@@ -67,12 +67,20 @@ class RunPodClient:
             if session_id:
                 data['session_id'] = session_id
             
+            print(f"DEBUG: Sending to {self.base_url}/api/v1/detect")
+            print(f"DEBUG: files keys: {list(files.keys())}")
+            print(f"DEBUG: data: {data}")
+            
             response = self.session.post(
                 f'{self.base_url}/api/v1/detect',
                 files=files,
                 data=data,
                 timeout=60
             )
+            
+            print(f"DEBUG: Response status: {response.status_code}")
+            print(f"DEBUG: Response text: {response.text[:500]}")
+            
             response.raise_for_status()
             return response.json()
             
