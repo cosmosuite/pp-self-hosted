@@ -169,7 +169,7 @@ class NudeDetector:
         self.input_width  = inp.shape[2]
         self.input_height = inp.shape[3]
 
-        self.blur_exception_rules = None
+        self.blur_exception_rules = {}
         self.full_blur_count      = 0
         
     def load_exception_rules(self, rule_file_path):
