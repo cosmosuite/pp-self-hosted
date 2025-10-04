@@ -32,17 +32,17 @@ export const Canvas: React.FC<CanvasProps> = ({ imageUrl, result, censoredImageU
             />
           </div>
 
-          {result && (
+          {result && result.data && (
             <div className="detection-info">
               <div className="detection-stats">
                 <div className="stat-item">
                   <span className="stat-label">Detections</span>
-                  <span className="stat-value">{result.data.detections_count}</span>
+                  <span className="stat-value">{result.data.detections_count || 0}</span>
                 </div>
                 <div className="stat-item">
                   <span className="stat-label">Risk Level</span>
-                  <span className={`stat-value ${getRiskClass(result.data.risk_level)}`}>
-                    {result.data.risk_level}
+                  <span className={`stat-value ${getRiskClass(result.data.risk_level || 'safe')}`}>
+                    {result.data.risk_level || 'SAFE'}
                   </span>
                 </div>
                 <div className="stat-item">
@@ -65,6 +65,12 @@ export const Canvas: React.FC<CanvasProps> = ({ imageUrl, result, censoredImageU
                   </a>
                 </div>
               )}
+            </div>
+          )}
+          
+          {result && !result.data && result.status === 'error' && (
+            <div className="error-message">
+              Error: {result.error || 'Processing failed'}
             </div>
           )}
         </>

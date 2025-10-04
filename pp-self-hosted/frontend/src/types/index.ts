@@ -28,16 +28,17 @@ export interface Detection {
 
 export interface ProcessResult {
   status: string;
-  data: {
+  data?: {
     detections_count: number;
     risk_level: string;
     risk_distribution: Record<string, number>;
     is_safe: boolean;
     threshold_used: number;
   };
-  detections: Detection[];
+  detections?: Detection[];
   censored_image?: string;
   session_id?: string;
+  error?: string;
 }
 
 export interface BlurSettings {
