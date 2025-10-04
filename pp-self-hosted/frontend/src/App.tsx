@@ -75,6 +75,8 @@ function App() {
         blurSettings.useFaceLandmarks
       );
 
+      console.log('SafeVision Response:', result);
+      
       setCurrentResult(result);
       
       if (result.censored_image) {
@@ -86,6 +88,7 @@ function App() {
         q.id === item.id ? { ...q, status: 'completed', result } : q
       ));
     } catch (error: any) {
+      console.error('Processing error:', error);
       setQueue(prev => prev.map(q => 
         q.id === item.id ? { 
           ...q, 
