@@ -143,6 +143,131 @@ body {
   color: #e5e7eb;
 }
 
+.accordion-item {
+  margin-bottom: 0.5rem;
+}
+
+.accordion-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  background: #2a2a2a;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.accordion-header:hover {
+  background: #333;
+}
+
+.accordion-header span:first-of-type {
+  flex: 1;
+}
+
+.accordion-content {
+  padding: 0.75rem 0.5rem;
+}
+
+.badge {
+  background: #667eea;
+  color: white;
+  padding: 0.125rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.compact-toggle-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+}
+
+.compact-toggle {
+  display: flex;
+  align-items: center;
+}
+
+.compact-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.8125rem;
+  color: #d1d5db;
+  width: 100%;
+}
+
+.compact-toggle-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #667eea;
+}
+
+.compact-toggle-label span {
+  user-select: none;
+}
+
+.blur-type-selector {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.blur-type-btn {
+  padding: 0.5rem;
+  background: #2a2a2a;
+  border: 1px solid #4b5563;
+  border-radius: 6px;
+  color: #d1d5db;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.blur-type-btn:hover {
+  background: #333;
+  border-color: #667eea;
+}
+
+.blur-type-btn.active {
+  background: #667eea;
+  border-color: #667eea;
+  color: white;
+}
+
+.compact-slider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.compact-slider-label {
+  font-size: 0.8125rem;
+  color: #9ca3af;
+  min-width: 60px;
+}
+
+.compact-slider input[type="range"] {
+  flex: 1;
+}
+
+.slider-value-inline {
+  font-size: 0.8125rem;
+  color: #667eea;
+  font-weight: 600;
+  min-width: 40px;
+  text-align: right;
+}
+
 .toggle-switch {
   position: relative;
   width: 44px;
