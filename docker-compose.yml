@@ -1,39 +1,62 @@
-version: "3.8"
+version: "3.9"
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Local development: runs all 3 services together.
+#
+# In production:
+#   - compute → Hetzner VPS (compute/docker-compose.yml)
+#   - middleware + frontend → Railway (separate services)
+# ──────────────────────────────────────────────────────────────────────────────
 
 services:
-  backend:
-    build: ./backend
+  compute:
+    build: ./compute
     ports:
       - "8000:8000"
     environment:
-      - HOST=0.0.0.0
-      - PORT=8000
+      - COMPUTE_API_KEY=${COMPUTE_API_KEY:-dev-secret}
+    volumes:
+      - compute-models:/app/models
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  middleware:
+    build: ./middleware
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+      - COMPUTE_URL=http://compute:8000
+      - COMPUTE_API_KEY=${COMPUTE_API_KEY:-dev-secret}
       - ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
-      - AUTUMN_ENABLED=false
-      - DEFAULT_THRESHOLD=0.25
-      - MAX_UPLOAD_SIZE_MB=50
-      # PostgreSQL (Railway) — set your Railway connection string
+      - AUTUMN_ENABLED=${AUTUMN_ENABLED:-false}
+      - AUTUMN_SECRET_KEY=${AUTUMN_SECRET_KEY:-}
       - DATABASE_URL=${DATABASE_URL:-}
-      # Cloudflare R2 Storage
       - R2_ACCOUNT_ID=${R2_ACCOUNT_ID:-}
       - R2_ACCESS_KEY_ID=${R2_ACCESS_KEY_ID:-}
       - R2_SECRET_ACCESS_KEY=${R2_SECRET_ACCESS_KEY:-}
       - R2_BUCKET_NAME=${R2_BUCKET_NAME:-safevision}
       - R2_PUBLIC_URL=${R2_PUBLIC_URL:-}
-    volumes:
-      - model-cache:/app/models
+    depends_on:
+      compute:
+        condition: service_healthy
     restart: unless-stopped
 
   frontend:
     build:
       context: ./frontend
       args:
-        VITE_API_URL: http://localhost:8000
+        VITE_API_URL: http://localhost:4000
     ports:
       - "3000:3000"
     depends_on:
-      - backend
+      - middleware
     restart: unless-stopped
 
 volumes:
-  model-cache:
+  compute-models:

@@ -1,12 +1,7 @@
 """
-SafeVision API - Face Landmark Service
+SafeVision Compute - Face Landmark Service
 Uses dlib's 68-point shape predictor to produce real face contour polygons.
 For non-face body parts, generates elliptical contour approximations.
-
-This is the same approach used in the original SafeVision/face_landmarks.py:
-  - 68 facial landmarks: jawline (0-16), eyebrows (17-26), eyes (36-47),
-    nose (27-35), mouth (48-67)
-  - Convex hull of jawline + eyebrows + forehead approximation → polygon mask
 """
 
 import os
@@ -22,8 +17,6 @@ import numpy as np
 
 logger = logging.getLogger("safevision.face_landmarks")
 
-# ─── Model paths ──────────────────────────────────────────────────────────────
-
 MODEL_FILENAME = "shape_predictor_68_face_landmarks.dat"
 MODEL_URL = "https://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2"
 
@@ -33,14 +26,11 @@ def _get_model_path(model_dir: str) -> str:
 
 
 def _download_dlib_model(model_dir: str) -> bool:
-    """Download and extract the dlib 68-point shape predictor (~68 MB)."""
     model_path = _get_model_path(model_dir)
     if os.path.exists(model_path):
         return True
-
     os.makedirs(model_dir, exist_ok=True)
     bz2_path = model_path + ".bz2"
-
     try:
         logger.info(f"Downloading dlib face landmark model from {MODEL_URL} ...")
         urllib.request.urlretrieve(MODEL_URL, bz2_path)
@@ -52,7 +42,6 @@ def _download_dlib_model(model_dir: str) -> bool:
         return True
     except Exception as e:
         logger.error(f"Failed to download dlib model: {e}")
-        # Clean up partial downloads
         for p in [bz2_path, model_path]:
             if os.path.exists(p):
                 os.remove(p)
@@ -60,46 +49,30 @@ def _download_dlib_model(model_dir: str) -> bool:
 
 
 class FaceLandmarkService:
-    """
-    Extracts face contour polygons using dlib's 68-point shape predictor.
-    Also generates elliptical contours for non-face body parts.
-
-    This replicates the approach from SafeVision/face_landmarks.py:
-    jawline + eyebrows + forehead approximation → convex hull.
-    """
-
     def __init__(self):
         self._predictor = None
         self._detector = None
         self._initialized = False
 
     def _ensure_initialized(self):
-        """Lazy-init dlib so we don't import it at module load time."""
         if self._initialized:
             return
-        self._initialized = True  # Don't retry on every call
-
+        self._initialized = True
         try:
-            import dlib  # noqa: F811
-
-            # Determine model directory
+            import dlib
             from app.config import settings
             model_dir = getattr(settings, "model_dir", "models")
             model_path = _get_model_path(model_dir)
-
-            # Auto-download if missing
             if not os.path.exists(model_path):
                 _download_dlib_model(model_dir)
-
             if os.path.exists(model_path):
                 self._predictor = dlib.shape_predictor(model_path)
                 self._detector = dlib.get_frontal_face_detector()
                 logger.info(f"dlib 68-point face landmark detector initialized ({model_path})")
             else:
                 logger.warning("dlib shape predictor model not found. Contour blur will use ellipse fallback.")
-
         except ImportError:
-            logger.warning("dlib not installed. Contour blur will use ellipse fallback. pip install dlib")
+            logger.warning("dlib not installed. Contour blur will use ellipse fallback.")
         except Exception as e:
             logger.warning(f"dlib init failed: {e}. Contour blur will use ellipse fallback.")
 
@@ -108,130 +81,73 @@ class FaceLandmarkService:
         self._ensure_initialized()
         return self._predictor is not None and self._detector is not None
 
-    # ── Face contour via dlib ─────────────────────────────────────────────────
-
     def get_face_contour(
         self,
         image_bgr: np.ndarray,
         face_bbox: Tuple[int, int, int, int],
         expansion: float = 1.2,
     ) -> Optional[List[List[int]]]:
-        """
-        Given the original BGR image and a face bounding box (x, y, w, h),
-        run dlib's 68-point landmark predictor and return a convex hull
-        polygon [[x1,y1], [x2,y2], ...] in *original image* coordinates.
-
-        Uses the same algorithm as SafeVision/face_landmarks.py:
-        jawline (0-16) + eyebrows (17-26) + forehead approximation → convex hull.
-
-        Returns None if detection fails.
-        """
         self._ensure_initialized()
         if self._predictor is None:
             return None
-
         import dlib
-
         try:
             x, y, w, h = face_bbox
             img_h, img_w = image_bgr.shape[:2]
-
-            # Clamp bbox
             x = max(0, min(x, img_w - 1))
             y = max(0, min(y, img_h - 1))
             w = max(1, min(w, img_w - x))
             h = max(1, min(h, img_h - y))
 
-            # Convert to dlib rectangle
             dlib_rect = dlib.rectangle(x, y, x + w, y + h)
-
-            # Get 68 landmarks
             shape = self._predictor(image_bgr, dlib_rect)
             landmarks = np.array([[p.x, p.y] for p in shape.parts()])
-
             if len(landmarks) < 68:
                 return None
 
-            # ── Build face outline (same as SafeVision/face_landmarks.py) ──
-
-            # Jawline points 0-16
             jawline = landmarks[0:17]
-
-            # Eyebrow points 17-26
             left_eyebrow = landmarks[17:22]
             right_eyebrow = landmarks[22:27]
-
-            # Nose/cheek area for better coverage
             nose_cheek = landmarks[31:36]
             mouth_area = landmarks[48:68]
-
-            # Approximate forehead
             forehead_points = self._approximate_forehead(landmarks, expansion)
 
-            # Combine all boundary points
             all_points = np.concatenate([
-                jawline,
-                left_eyebrow,
-                right_eyebrow,
-                nose_cheek,
-                mouth_area,
-                forehead_points,
+                jawline, left_eyebrow, right_eyebrow,
+                nose_cheek, mouth_area, forehead_points,
             ])
-
-            # Convex hull
             hull = cv2.convexHull(all_points.astype(np.int32))
             contour = hull.reshape(-1, 2)
-
-            # Clamp to image bounds
             contour[:, 0] = np.clip(contour[:, 0], 0, img_w - 1)
             contour[:, 1] = np.clip(contour[:, 1], 0, img_h - 1)
-
-            result = contour.tolist()
-            logger.debug(f"Face contour: {len(result)} hull points from 68 landmarks")
-            return result
-
+            return contour.tolist()
         except Exception as e:
             logger.warning(f"dlib face landmark detection failed: {e}")
             return None
 
     @staticmethod
     def _approximate_forehead(landmarks: np.ndarray, expansion_factor: float) -> np.ndarray:
-        """
-        Approximate forehead area using eyebrow and eye positions.
-        Same algorithm as SafeVision/face_landmarks.py._approximate_forehead().
-        """
         try:
-            # Get eyebrow center points
             left_eyebrow_center = np.mean(landmarks[17:22], axis=0)
             right_eyebrow_center = np.mean(landmarks[22:27], axis=0)
-
-            # Interpupillary distance for scaling
             left_eye_center = np.mean(landmarks[36:42], axis=0)
             right_eye_center = np.mean(landmarks[42:48], axis=0)
             interpupillary = np.linalg.norm(right_eye_center - left_eye_center)
-
-            # Dynamic padding based on face size
             dynamic_padding = max(10, min(50, int(interpupillary * 0.25)))
-
-            # Forehead height: 35% of eyebrow-to-nose distance
             eyebrow_y = (left_eyebrow_center[1] + right_eyebrow_center[1]) / 2
             nose_tip_y = landmarks[30][1]
             eyebrow_to_nose = nose_tip_y - eyebrow_y
             forehead_height = max(20, min(100, int(eyebrow_to_nose * 0.35 * expansion_factor)))
-
             forehead_top_y = max(0, int(eyebrow_y - forehead_height))
             forehead_left_x = max(0, int(left_eyebrow_center[0] - dynamic_padding))
             forehead_right_x = int(right_eyebrow_center[0] + dynamic_padding)
-
             return np.array([
                 [forehead_left_x, forehead_top_y],
                 [forehead_right_x, forehead_top_y],
                 [forehead_right_x, int(eyebrow_y)],
                 [forehead_left_x, int(eyebrow_y)],
             ])
-
         except Exception:
-            # Fallback
             eyebrow_y = landmarks[19][1] if len(landmarks) > 19 else landmarks[0][1]
             return np.array([
                 [landmarks[0][0], max(0, int(eyebrow_y - 50))],
@@ -240,8 +156,6 @@ class FaceLandmarkService:
                 [landmarks[0][0], int(eyebrow_y)],
             ], dtype=np.int32)
 
-    # ── Elliptical contour for non-face body parts ────────────────────────────
-
     @staticmethod
     def generate_elliptical_contour(
         bbox: dict,
@@ -249,15 +163,10 @@ class FaceLandmarkService:
         img_width: int = 99999,
         img_height: int = 99999,
     ) -> List[List[int]]:
-        """
-        Generate an elliptical polygon inscribed in the given bounding box.
-        Returns [[x1,y1], [x2,y2], ...] suitable for canvas polygon clipping.
-        """
         cx = bbox["x"] + bbox["width"] / 2
         cy = bbox["y"] + bbox["height"] / 2
         rx = bbox["width"] / 2
         ry = bbox["height"] / 2
-
         points = []
         for i in range(num_points):
             angle = 2 * math.pi * i / num_points
@@ -266,9 +175,7 @@ class FaceLandmarkService:
             px = max(0, min(px, img_width - 1))
             py = max(0, min(py, img_height - 1))
             points.append([px, py])
-
         return points
 
 
-# Singleton
 face_landmark_service = FaceLandmarkService()

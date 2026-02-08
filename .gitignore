@@ -123,12 +123,20 @@ SafeVision/coverage.xml
 SafeVision/*.cover
 SafeVision/.hypothesis/
 
-# Backend specific
+# Backend specific (legacy — archived)
 backend/venv/
 backend/uploads/
 backend/outputs/
 backend/temp/
 backend/models/
+
+# Compute specific
+compute/models/
+compute/venv/
+
+# Middleware specific
+middleware/node_modules/
+middleware/dist/
 
 # Frontend specific
 frontend/dist/

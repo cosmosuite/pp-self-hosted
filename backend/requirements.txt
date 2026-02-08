@@ -22,5 +22,5 @@ onnx>=1.17.0
 onnxruntime>=1.17.0
 Pillow>=11.0.0
 
-# Face landmark detection for contour blur
-mediapipe>=0.10.0
+# Face landmark detection for contour blur (dlib 68-point shape predictor)
+dlib>=19.24.0

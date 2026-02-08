@@ -1,12 +1,14 @@
 FROM python:3.11-slim
 
-# Install system dependencies for OpenCV headless (libgl1 = libgl1-mesa-glx on newer Debian)
+# Install system dependencies for OpenCV headless + dlib (cmake, build-essential for dlib compile)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 \
     libglib2.0-0 \
     libsm6 \
     libxext6 \
     libxrender1 \
+    cmake \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
