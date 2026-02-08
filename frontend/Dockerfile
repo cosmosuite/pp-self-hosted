@@ -23,7 +23,7 @@ RUN npm install -g serve
 
 COPY --from=build /app/dist ./dist
 
+# Railway injects PORT at runtime; default to 3000 for local
 ENV PORT=3000
-EXPOSE 3000
 
-CMD sh -c "serve -s dist -l \$PORT"
+CMD ["sh", "-c", "serve -s dist -l $PORT"]
