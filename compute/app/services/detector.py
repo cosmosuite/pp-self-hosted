@@ -234,6 +234,20 @@ class DetectorService:
         highest_risk = "SAFE"
         risk_priority = ["SAFE", "LOW", "MODERATE", "HIGH", "CRITICAL"]
 
+        # ── Run MediaPipe Face Mesh ONCE for the full image ──────────────
+        # This gives us precise 36-point face oval contours for ALL faces.
+        has_faces = any(
+            d["class"] in self.FACE_LABELS
+            for d in raw_detections
+            if d["score"] >= threshold
+        )
+        face_contours = []
+        if has_faces:
+            try:
+                face_contours = face_landmark_service.get_all_face_contours(img)
+            except Exception as e:
+                logger.warning(f"MediaPipe full-image face detection failed: {e}")
+
         detections = []
         for d in raw_detections:
             if d["score"] < threshold:
@@ -255,14 +269,13 @@ class DetectorService:
 
             # Generate contour polygon
             contour = None
-            if label in self.FACE_LABELS:
-                try:
-                    contour = face_landmark_service.get_face_contour(
-                        img, (bx, by, bw, bh), expansion=1.15
-                    )
-                except Exception as e:
-                    logger.warning(f"Face landmark detection failed for {label}: {e}")
+            if label in self.FACE_LABELS and face_contours:
+                # Match this face bbox to the nearest MediaPipe face oval
+                contour = face_landmark_service.match_contour_to_bbox(
+                    face_contours, (bx, by, bw, bh)
+                )
 
+            # Fallback to elliptical contour for body parts or unmatched faces
             if contour is None:
                 contour = face_landmark_service.generate_elliptical_contour(
                     bbox, num_points=36, img_width=img_width, img_height=img_height

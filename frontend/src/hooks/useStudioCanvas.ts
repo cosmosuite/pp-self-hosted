@@ -53,6 +53,33 @@ export function useStudioCanvas() {
 
   // ── Apply blur effect to a region with clipping ────────────────────────
 
+  /**
+   * Compute the bounding box that covers all contour points + the detection bbox.
+   * This ensures the blur source region is large enough for contours that extend
+   * beyond the detection bbox (e.g. forehead above the face box).
+   */
+  const getEffectiveBounds = (
+    x: number, y: number, w: number, h: number,
+    contourPoints: number[][] | null,
+    canvasW: number, canvasH: number
+  ) => {
+    if (!contourPoints || contourPoints.length < 3) return { ex: x, ey: y, ew: w, eh: h };
+    let minX = x, minY = y, maxX = x + w, maxY = y + h;
+    for (const [px, py] of contourPoints) {
+      if (px < minX) minX = px;
+      if (py < minY) minY = py;
+      if (px > maxX) maxX = px;
+      if (py > maxY) maxY = py;
+    }
+    // Add a small margin for blur bleed
+    const margin = 8;
+    minX = Math.max(0, minX - margin);
+    minY = Math.max(0, minY - margin);
+    maxX = Math.min(canvasW, maxX + margin);
+    maxY = Math.min(canvasH, maxY + margin);
+    return { ex: minX, ey: minY, ew: maxX - minX, eh: maxY - minY };
+  };
+
   const applyBlurClipped = useCallback(
     (
       ctx: CanvasRenderingContext2D,
@@ -63,15 +90,20 @@ export function useStudioCanvas() {
       intensity: number,
       contourPoints: number[][] | null
     ) => {
-      const radius = Math.max(4, (intensity / 10) * Math.min(w, h) * 0.4);
+      // Use effective bounds that cover the full contour area
+      const { ex, ey, ew, eh } = getEffectiveBounds(
+        x, y, w, h, contourPoints, ctx.canvas.width, ctx.canvas.height
+      );
+
+      const radius = Math.max(4, (intensity / 10) * Math.min(ew, eh) * 0.4);
       const passes = Math.ceil(intensity / 2);
 
-      // Create the blurred version of the bounding box region
+      // Create the blurred version of the effective region (covers contour + bbox)
       const tmp = document.createElement("canvas");
-      tmp.width = w;
-      tmp.height = h;
+      tmp.width = ew;
+      tmp.height = eh;
       const tCtx = tmp.getContext("2d")!;
-      tCtx.drawImage(ctx.canvas, x, y, w, h, 0, 0, w, h);
+      tCtx.drawImage(ctx.canvas, ex, ey, ew, eh, 0, 0, ew, eh);
       for (let i = 0; i < passes; i++) {
         tCtx.filter = `blur(${radius}px)`;
         tCtx.drawImage(tmp, 0, 0);
@@ -86,7 +118,7 @@ export function useStudioCanvas() {
         clipRect(ctx, x, y, w, h);
       }
       ctx.clip();
-      ctx.drawImage(tmp, 0, 0, w, h, x, y, w, h);
+      ctx.drawImage(tmp, 0, 0, ew, eh, ex, ey, ew, eh);
       ctx.restore();
     },
     []
@@ -104,17 +136,20 @@ export function useStudioCanvas() {
       size: number,
       contourPoints: number[][] | null
     ) => {
+      const { ex, ey, ew, eh } = getEffectiveBounds(
+        x, y, w, h, contourPoints, ctx.canvas.width, ctx.canvas.height
+      );
       const blockSize = Math.max(4, Math.round((size / 10) * 40));
 
-      // Create pixelated version
+      // Create pixelated version of the effective region
       const tmp = document.createElement("canvas");
-      tmp.width = w;
-      tmp.height = h;
+      tmp.width = ew;
+      tmp.height = eh;
       const tCtx = tmp.getContext("2d")!;
-      tCtx.drawImage(ctx.canvas, x, y, w, h, 0, 0, w, h);
+      tCtx.drawImage(ctx.canvas, ex, ey, ew, eh, 0, 0, ew, eh);
 
-      const sw = Math.max(1, Math.ceil(w / blockSize));
-      const sh = Math.max(1, Math.ceil(h / blockSize));
+      const sw = Math.max(1, Math.ceil(ew / blockSize));
+      const sh = Math.max(1, Math.ceil(eh / blockSize));
       const small = document.createElement("canvas");
       small.width = sw;
       small.height = sh;
@@ -123,7 +158,7 @@ export function useStudioCanvas() {
       sCtx.drawImage(tmp, 0, 0, sw, sh);
 
       tCtx.imageSmoothingEnabled = false;
-      tCtx.drawImage(small, 0, 0, sw, sh, 0, 0, w, h);
+      tCtx.drawImage(small, 0, 0, sw, sh, 0, 0, ew, eh);
       tCtx.imageSmoothingEnabled = true;
 
       // Draw back through a clipping mask
@@ -134,7 +169,7 @@ export function useStudioCanvas() {
         clipRect(ctx, x, y, w, h);
       }
       ctx.clip();
-      ctx.drawImage(tmp, 0, 0, w, h, x, y, w, h);
+      ctx.drawImage(tmp, 0, 0, ew, eh, ex, ey, ew, eh);
       ctx.restore();
     },
     []
