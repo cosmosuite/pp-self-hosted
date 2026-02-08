@@ -6,6 +6,12 @@ import { healthRouter } from "./routes/health";
 import { labelsRouter } from "./routes/labels";
 import { creditsRouter } from "./routes/credits";
 import { historyRouter } from "./routes/history";
+import { initStorage } from "./services/storage";
+import { autumnService } from "./services/autumn";
+
+// ─── Initialize services ─────────────────────────────────────────────────────
+initStorage();
+autumnService.initialize();
 
 const app = express();
 const PORT = parseInt(process.env.PORT || "4000", 10);

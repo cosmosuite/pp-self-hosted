@@ -37,11 +37,12 @@ services:
       - AUTUMN_ENABLED=${AUTUMN_ENABLED:-false}
       - AUTUMN_SECRET_KEY=${AUTUMN_SECRET_KEY:-}
       - DATABASE_URL=${DATABASE_URL:-}
-      - R2_ACCOUNT_ID=${R2_ACCOUNT_ID:-}
-      - R2_ACCESS_KEY_ID=${R2_ACCESS_KEY_ID:-}
-      - R2_SECRET_ACCESS_KEY=${R2_SECRET_ACCESS_KEY:-}
-      - R2_BUCKET_NAME=${R2_BUCKET_NAME:-safevision}
-      - R2_PUBLIC_URL=${R2_PUBLIC_URL:-}
+      # Railway Bucket Storage (set if using locally)
+      - BUCKET=${BUCKET:-}
+      - ACCESS_KEY_ID=${BUCKET_ACCESS_KEY_ID:-}
+      - SECRET_ACCESS_KEY=${BUCKET_SECRET_ACCESS_KEY:-}
+      - REGION=${BUCKET_REGION:-auto}
+      - ENDPOINT=${BUCKET_ENDPOINT:-}
     depends_on:
       compute:
         condition: service_healthy

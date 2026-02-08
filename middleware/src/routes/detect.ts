@@ -11,7 +11,7 @@ import { apiKeyAuth } from "../middleware/auth";
 import { detectLimiter } from "../middleware/rateLimit";
 import { callComputeDetect } from "../services/compute";
 import { autumnService } from "../services/autumn";
-import { uploadImage, isStorageEnabled } from "../services/storage";
+import { uploadImage, isStorageEnabled, getPresignedUrl } from "../services/storage";
 import { getDb } from "../services/db";
 
 const upload = multer({
@@ -59,14 +59,18 @@ detectRouter.post(
         threshold
       );
 
-      // Upload original image to R2
+      // Upload original image to Railway bucket
+      let imageKey: string | null = null;
       let imageUrl: string | null = null;
       if (isStorageEnabled()) {
-        imageUrl = await uploadImage(
+        imageKey = await uploadImage(
           req.file.buffer,
           req.file.mimetype,
           req.file.originalname
         );
+        if (imageKey) {
+          imageUrl = await getPresignedUrl(imageKey, 86400); // 24h URL
+        }
       }
 
       // Track usage
@@ -85,7 +89,7 @@ detectRouter.post(
           const record = await db.detection.create({
             data: {
               customerId,
-              imageUrl,
+              imageUrl: imageKey,  // Store the key, not the presigned URL
               imageDimensions: result.image_dimensions as any,
               detections: result.detections as any,
               detectionCount: result.detection_count,
