@@ -8,10 +8,7 @@ RUN npm ci
 
 COPY . .
 
-# Build with the API URL from build arg
-ARG VITE_API_URL
-ENV VITE_API_URL=$VITE_API_URL
-
+# .env.production is copied with the source and Vite loads it automatically
 RUN npm run build
 
 # Serve stage - lightweight static server
